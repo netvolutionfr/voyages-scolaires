@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
@@ -17,6 +18,13 @@ public class VoyageParticipant {
     private Long id;
 
     private boolean accompagnateur;
+    private boolean organisateur;
+
+    private LocalDateTime dateInscription;
+    private LocalDateTime dateEngagement;
+    private StatutInscription statutInscription;
+    private String commentaireDecision;
+    private String messageMotivation;
 
     @ManyToOne
     private Voyage voyage;
@@ -26,4 +34,5 @@ public class VoyageParticipant {
 
     @OneToMany(mappedBy = "voyageParticipant", cascade = CascadeType.ALL)
     private List<Document> documents;
+
 }

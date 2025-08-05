@@ -25,20 +25,20 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> corsConfigurer())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
+                .requestMatchers(
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html"
                         ).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/voyages/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/voyages").permitAll()
                         .anyRequest().authenticated()
                 )
-//                .oauth2ResourceServer(oauth2 -> oauth2
-//                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
-//                );
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .jwt(jwt -> jwt
+                                .jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                );
 ;
         return http.build();
     }
@@ -57,11 +57,9 @@ public class SecurityConfig {
                         .map(granted -> (GrantedAuthority) granted) // <-- assure le bon type
                         .toList();
 
-                System.out.println(">>> ROLES MANUELS : " + authorities);
                 return authorities;
             }
 
-            System.out.println(">>> Aucun rôle trouvé dans realm_access");
             return List.of();
         });
 
@@ -74,8 +72,8 @@ public class SecurityConfig {
             @Override
             public void addCorsMappings(@NonNull CorsRegistry registry) {
                 registry.addMapping("/api/**")
-                        .allowedOrigins("http://localhost:5173")
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH")
+                        .allowedOrigins("http://localhost:3000")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);
             }

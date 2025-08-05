@@ -22,6 +22,10 @@ public class Voyage {
     private String destination;
     private LocalDate dateDepart;
     private LocalDate dateRetour;
+    private Integer nombreMinParticipants;
+    private Integer nombreMaxParticipants;
+    private LocalDate dateDebutInscription;
+    private LocalDate dateFinInscription;
 
 
     @OneToMany(mappedBy = "voyage", cascade = CascadeType.ALL)
