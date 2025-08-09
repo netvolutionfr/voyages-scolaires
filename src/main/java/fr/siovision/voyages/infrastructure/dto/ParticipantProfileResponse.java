@@ -8,14 +8,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ParticipantProfileResponse {
+    private Long id;
     private String nom;
     private String prenom;
     private String sexe; // M, F, Autre
     private String email;
     private String telephone;
-    private String adresse;
-    private String codePostal;
-    private String ville;
     private String dateNaissance;
     private String section;
 

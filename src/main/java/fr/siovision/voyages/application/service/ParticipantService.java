@@ -24,9 +24,6 @@ public class ParticipantService {
         participant.setSexe(participantRequest.getSexe());
         participant.setEmail(participantRequest.getEmail());
         participant.setTelephone(participantRequest.getTelephone());
-        participant.setAdresse(participantRequest.getAdresse());
-        participant.setCodePostal(participantRequest.getCodePostal());
-        participant.setVille(participantRequest.getVille());
         participant.setDateNaissance(participantRequest.getDateNaissance());
         participant.setSection(participantRequest.getSection());
 
@@ -62,14 +59,12 @@ public class ParticipantService {
                 .orElseThrow(() -> new ProfilNotFoundException(email));
 
         return new ParticipantProfileResponse(
+                p.getId(),
                 p.getNom(),
                 p.getPrenom(),
                 p.getSexe(),
                 p.getEmail(),
                 p.getTelephone(),
-                p.getAdresse(),
-                p.getCodePostal(),
-                p.getVille(),
                 p.getDateNaissance() != null ? p.getDateNaissance().toString() : null,
                 p.getSection(),
                 p.getParent1Nom(),
@@ -103,18 +98,6 @@ public class ParticipantService {
         // Téléphone
         if (profilRequest.getTelephone() != null && !profilRequest.getTelephone().isEmpty()) {
             participant.setTelephone(profilRequest.getTelephone());
-        }
-        // Adresse
-        if (profilRequest.getAdresse() != null && !profilRequest.getAdresse().isEmpty()) {
-            participant.setAdresse(profilRequest.getAdresse());
-        }
-        // Code postal
-        if (profilRequest.getCodePostal() != null && !profilRequest.getCodePostal().isEmpty()) {
-            participant.setCodePostal(profilRequest.getCodePostal());
-        }
-        // Ville
-        if (profilRequest.getVille() != null && !profilRequest.getVille().isEmpty()) {
-            participant.setVille(profilRequest.getVille());
         }
         // Date de naissance
         if (profilRequest.getDateNaissance() != null) {
@@ -164,14 +147,12 @@ public class ParticipantService {
         Participant updatedParticipant = participantRepository.save(participant);
 
         return new ParticipantProfileResponse(
+                updatedParticipant.getId(),
                 updatedParticipant.getNom(),
                 updatedParticipant.getPrenom(),
                 updatedParticipant.getSexe(),
                 updatedParticipant.getEmail(),
                 updatedParticipant.getTelephone(),
-                updatedParticipant.getAdresse(),
-                updatedParticipant.getCodePostal(),
-                updatedParticipant.getVille(),
                 updatedParticipant.getDateNaissance() != null ? updatedParticipant.getDateNaissance().toString() : null,
                 updatedParticipant.getSection(),
                 updatedParticipant.getParent1Nom(),

@@ -11,9 +11,6 @@ public class ParticipantRequest {
     private String sexe; // M, F, Autre
     private String email;
     private String telephone;
-    private String adresse;
-    private String codePostal;
-    private String ville;
     private LocalDate dateNaissance;
     private String section;
 

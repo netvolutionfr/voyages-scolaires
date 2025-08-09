@@ -60,7 +60,7 @@ public class ParticipantController {
         return ResponseEntity.status(HttpStatus.CREATED).body(savedParticipant);
     }
 
-    @GetMapping("/api/me")
+    @GetMapping("/api/me2")
     @PreAuthorize("hasAnyRole('user')")
     public ResponseEntity<ParticipantProfileResponse> getMonProfil(@AuthenticationPrincipal Jwt principal) {
         // Récupérer l'email de l'utilisateur connecté
@@ -76,7 +76,7 @@ public class ParticipantController {
         return ResponseEntity.ok(profile);
     }
 
-    @PostMapping("/api/me")
+    @PostMapping("/api/me2")
     @PreAuthorize("hasAnyRole('user')")
     public ResponseEntity<ParticipantProfileResponse> updateMonProfil(@AuthenticationPrincipal Jwt principal, @RequestBody ProfilRequest profilRequest) {
         // Récupérer l'email, le nom et le prénom de l'utilisateur connecté

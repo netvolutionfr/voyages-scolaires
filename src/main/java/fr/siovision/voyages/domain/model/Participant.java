@@ -27,12 +27,6 @@ public class Participant {
     private String email;
     @Convert(converter = CryptoConverter.class)
     private String telephone;
-    @Convert(converter = CryptoConverter.class)
-    private String adresse;
-    @Convert(converter = CryptoConverter.class)
-    private String codePostal;
-    @Convert(converter = CryptoConverter.class)
-    private String ville;
     @Convert(converter = CryptoDateConverter.class)
     @Column(columnDefinition = "TEXT")
     private LocalDate dateNaissance;

@@ -8,9 +8,6 @@ import java.time.LocalDate;
 public class ProfilRequest {
     private String sexe; // M, F, Autre
     private String telephone;
-    private String adresse;
-    private String codePostal;
-    private String ville;
     private LocalDate dateNaissance;
     private String section;
 
