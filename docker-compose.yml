@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - voyages_pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 10s
@@ -15,7 +15,7 @@ services:
       retries: 10
 
   api:
-    image: ghcr.io/netvolutionfr/voyages:latest   # remplacé automatiquement par le workflow
+    image: ghcr.io/netvolutionfr/voyages-scolaires:latest
     restart: always
     depends_on:
       db:
@@ -30,9 +30,9 @@ services:
       SERVER_SHUTDOWN: graceful
       JAVA_OPTS: -XX:MaxRAMPercentage=75
     ports:
-      - "127.0.0.1:8081:8080"  # Nginx (hôte) proxy_pass -> 127.0.0.1:8081 pour éviter le conflit avec le port 8080 utilisé par Keycloak
+      - "127.0.0.1:8081:8080"   # host:container → leaves 8080 free for Keycloak on host
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health/readiness"]
       interval: 15s
       timeout: 5s
       retries: 8
@@ -42,4 +42,4 @@ services:
           memory: "1g"
 
 volumes:
-  pgdata:
+  voyages_pgdata:
