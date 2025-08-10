@@ -14,7 +14,6 @@ public interface SectionRepository extends JpaRepository<Section, Long> {
                 FROM Section s
                 WHERE COALESCE(:q, '') = ''
                    OR lower(s.libelle) LIKE lower(concat('%', :q, '%'))
-                   OR lower(s.description) LIKE lower(concat('%', :q, '%'))
             """)
     Page<Section> search(@Param("q") String q, Pageable pageable);
 }
