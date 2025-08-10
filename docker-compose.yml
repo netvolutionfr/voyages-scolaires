@@ -32,7 +32,7 @@ services:
     ports:
       - "127.0.0.1:8081:8080"   # host:container → leaves 8080 free for Keycloak on host
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health/readiness"]
+      test: ["CMD", "curl", "-fsS", "http://localhost:9090/actuator/health/readiness"]
       interval: 15s
       timeout: 5s
       retries: 8

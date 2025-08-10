@@ -1,7 +1,11 @@
 package fr.siovision.voyages.config;
 
+import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
+import org.springframework.boot.actuate.health.HealthEndpoint;
+import org.springframework.boot.actuate.info.InfoEndpoint;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
 import org.springframework.lang.NonNull;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -21,16 +25,39 @@ import java.util.Map;
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
+    @Order(0) // priorité la plus haute
+    @Bean
+    SecurityFilterChain actuatorChain(HttpSecurity http) throws Exception {
+        // Cette chaîne ne s’applique qu’aux endpoints Actuator (peu importe le port)
+        http.securityMatcher(EndpointRequest.toAnyEndpoint());
+
+        return http
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
+                        // Laisse passer le health (et info si tu veux)
+                        .requestMatchers(EndpointRequest.to(HealthEndpoint.class, InfoEndpoint.class)).permitAll()
+                        // Tout le reste des endpoints Actuator = authentifié
+                        .anyRequest().authenticated()
+                )
+                // Optionnel : basique pour Actuator uniquement
+                // .httpBasic(Customizer.withDefaults())
+                .build();
+    }
+
+    @Order(1)
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> corsConfigurer())
                 .authorizeHttpRequests(auth -> auth
+                                .requestMatchers(
+                                        "/actuator/health", "/actuator/health/**", "/actuator/info"
+                                ).permitAll()
                 .requestMatchers(
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/swagger-ui.html"
+                        "/swagger-ui/**",
+                        "/v3/api-docs/**",
+                        "/swagger-ui.html"
                         ).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated()
