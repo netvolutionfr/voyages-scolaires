@@ -37,6 +37,7 @@ jobs:
             ghcr.io/${{ github.repository }}:${{ github.sha }}
           build-args: |
             APP_VERSION=${{ github.sha }}
+          provenance: false
 
   deploy_to_server:
     runs-on: ubuntu-latest
