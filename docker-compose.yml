@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:17
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  api:
+    image: ghcr.io/netvolutionfr/voyages:latest   # remplacé automatiquement par le workflow
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ./.env
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${DB_NAME}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_SHUTDOWN: graceful
+      JAVA_OPTS: -XX:MaxRAMPercentage=75
+    ports:
+      - "127.0.0.1:8081:8080"  # Nginx (hôte) proxy_pass -> 127.0.0.1:8081 pour éviter le conflit avec le port 8080 utilisé par Keycloak
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+    deploy:
+      resources:
+        limits:
+          memory: "1g"
+
+volumes:
+  pgdata:
