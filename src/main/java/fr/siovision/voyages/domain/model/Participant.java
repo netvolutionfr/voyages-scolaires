@@ -11,47 +11,55 @@ import java.util.List;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
+@Table(name = "participant",
+        uniqueConstraints = @UniqueConstraint(name="uk_participant_student_user", columnNames = "student_user_id"))
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Participant {
     @Id
     @GeneratedValue
-    private Long id;
+    private UUID id;
+
+    @Column(nullable=false)
     private String nom;
+
+    @Column(nullable=false)
     private String prenom;
+
     @Convert(converter = CryptoConverter.class)
+    @Column(nullable=false)
     private String sexe; // M, F, Autre
+
+    @Column(nullable=false)
     private String email;
+
     @Convert(converter = CryptoConverter.class)
     private String telephone;
+
     @Convert(converter = CryptoDateConverter.class)
     @Column(columnDefinition = "TEXT")
     private LocalDate dateNaissance;
-    private String section;
 
-    // parent 1
-    @Convert(converter = CryptoConverter.class)
-    @Convert(converter = CryptoConverter.class)
-    private String parent1Nom;
-    @Convert(converter = CryptoConverter.class)
-    private String parent1Prenom;
-    @Convert(converter = CryptoConverter.class)
-    private String parent1Email;
-    @Convert(converter = CryptoConverter.class)
-    private String parent1Telephone;
+    @ManyToOne
+    @JoinColumn(name = "section_id", nullable = false)
+    private Section section;
 
-    // parent 2
-    @Convert(converter = CryptoConverter.class)
-    private String parent2Nom;
-    @Convert(converter = CryptoConverter.class)
-    private String parent2Prenom;
-    @Convert(converter = CryptoConverter.class)
-    private String parent2Email;
-    @Convert(converter = CryptoConverter.class)
-    private String parent2Telephone;
+    // parent légal primaire (si mineur)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="parent_user_id")
+    private User legalGuardian;
+
+    // compte de l'élève (optionnel : mineur avec accès; obligatoire si majeur autonome)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="student_user_id", unique = true)
+    private User studentAccount;
+
+    // pratique : cache de l’email de contact principal (peut rester nul)
+    private String primaryContactEmail;
 
     @OneToMany
     private List<Document> documents;

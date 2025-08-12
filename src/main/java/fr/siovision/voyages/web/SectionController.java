@@ -37,7 +37,7 @@ public class SectionController {
         }
     }
 
-    @PreAuthorize("hasRole('admin')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping()
     public ResponseEntity<SectionDTO> createSection(@RequestBody SectionDTO sectionDTO) {
         // Créer une nouvelle section
@@ -45,7 +45,7 @@ public class SectionController {
         return ResponseEntity.status(201).body(createdSection);
     }
 
-    @PreAuthorize("hasRole('admin')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<SectionDTO> updateSection(@PathVariable Long id, @RequestBody SectionDTO sectionDTO) {
         // Mettre à jour une section existante
@@ -53,7 +53,7 @@ public class SectionController {
         return ResponseEntity.ok(updatedSection);
     }
 
-    @PreAuthorize("hasRole('admin')")
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSection(@PathVariable Long id) {
         // Supprimer une section par son ID

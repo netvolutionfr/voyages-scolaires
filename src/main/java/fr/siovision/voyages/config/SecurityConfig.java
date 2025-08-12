@@ -32,7 +32,7 @@ public class SecurityConfig {
         http.securityMatcher(EndpointRequest.toAnyEndpoint());
 
         return http
-                .csrf(csrf -> csrf.disable())
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         // Laisse passer le health (et info si tu veux)
                         .requestMatchers(EndpointRequest.to(HealthEndpoint.class, InfoEndpoint.class)).permitAll()
@@ -51,16 +51,14 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> corsConfigurer())
                 .authorizeHttpRequests(auth -> auth
-                                .requestMatchers(
-                                        "/actuator/health", "/actuator/health/**", "/actuator/info"
-                                ).permitAll()
-                .requestMatchers(
-                        "/swagger-ui/**",
-                        "/v3/api-docs/**",
-                        "/swagger-ui.html"
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui.html"
                         ).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/api/participants/**").hasAnyRole("ADMIN","PARENT")
+                        .requestMatchers("/**").authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt
@@ -80,7 +78,7 @@ public class SecurityConfig {
             if (realmAccess instanceof Map<?, ?> map && map.get("roles") instanceof List<?> rolesList) {
                 List<GrantedAuthority> authorities = rolesList.stream()
                         .filter(String.class::isInstance)
-                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                        .map(role -> new SimpleGrantedAuthority("ROLE_" + ((String) role).toUpperCase()))
                         .map(granted -> (GrantedAuthority) granted) // <-- assure le bon type
                         .toList();
 

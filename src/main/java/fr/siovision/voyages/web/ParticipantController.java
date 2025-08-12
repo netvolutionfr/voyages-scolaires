@@ -6,18 +6,22 @@ import fr.siovision.voyages.application.service.ParticipantService;
 import fr.siovision.voyages.domain.model.Participant;
 import fr.siovision.voyages.infrastructure.dto.ParticipantProfileResponse;
 import fr.siovision.voyages.infrastructure.dto.ParticipantRequest;
-import fr.siovision.voyages.infrastructure.dto.ProfilRequest;
-import org.keycloak.representations.idm.UserRepresentation;
+import fr.siovision.voyages.infrastructure.dto.SectionDTO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
+import java.util.List;
+import java.util.UUID;
 
+@Slf4j
 @RestController
 public class ParticipantController {
     @Autowired
@@ -26,71 +30,33 @@ public class ParticipantController {
     private KeycloakService keycloakService;
 
     @GetMapping("/api/participants")
-    @PreAuthorize("hasAnyRole('admin', 'manager')")
-    public ResponseEntity<Iterable<Participant>> getParticipants() {
-        // Récupérer tous les participants
-        Iterable<Participant> participants = participantService.getAllParticipants();
+    @PreAuthorize("hasAnyRole('ADMIN', 'PARENT')")
+    public ResponseEntity<Page<ParticipantProfileResponse>> getParticipants(
+            @RequestParam(required = false) String q,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        Page<ParticipantProfileResponse> participants = participantService.getAllParticipants(q, pageable);
         return ResponseEntity.ok(participants);
     }
 
     @PostMapping("/api/participants")
-    @PreAuthorize("hasAnyRole('admin', 'manager')")
-    public ResponseEntity<Participant> createParticipant(@RequestBody ParticipantRequest participantRequest) {
-        // 0. Vérifier que l'email du participant n'est pas vide
-        if (participantRequest.getEmail() == null || participantRequest.getEmail().isEmpty()) {
-            return ResponseEntity.badRequest().body(null);
-        }
-
-        // 1. Vérifier que le participant n'existe pas déjà dans la base de données
-        Optional<Participant> existingParticipant = participantService.getParticipantByEmail(participantRequest.getEmail());
-        if (existingParticipant.isPresent()) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(null);
-        }
-
-        // 2. Vérifier dans Keycloak si l'email du participant existe déjà
-        UserRepresentation keycloakUser = keycloakService.findUserByEmail(participantRequest.getEmail());
-
-        if (keycloakUser == null) {
-            // 3. Créer l'utilisateur Keycloak
-            keycloakUser = keycloakService.createUser(participantRequest);
-        }
-
+    @PreAuthorize("hasAnyRole('ADMIN', 'PARENT')")
+    public ResponseEntity<String> createParticipant(@RequestBody ParticipantRequest participantRequest) {
         // Appeler le service pour créer un nouveau participant
-        Participant savedParticipant = participantService.createParticipant(participantRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedParticipant);
+        log.info("Creating participant in the application for email {}", participantRequest.getEmail());
+        ParticipantProfileResponse savedParticipant = participantService.createParticipant(participantRequest);
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedParticipant.getId().toString());
     }
 
-    @GetMapping("/api/me2")
-    @PreAuthorize("hasAnyRole('user')")
-    public ResponseEntity<ParticipantProfileResponse> getMonProfil(@AuthenticationPrincipal Jwt principal) {
-        // Récupérer l'email de l'utilisateur connecté
-        String email = principal.getClaimAsString("email");
-
-        // Vérifier que l'email n'est pas vide
-        if (email == null || email.isEmpty()) {
-            return ResponseEntity.badRequest().body(null);
+    @GetMapping("/api/participants/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'PARENT')")
+    public ResponseEntity<ParticipantProfileResponse> getParticipantById(@PathVariable UUID id) {
+        // Récupérer un participant par son ID
+        ParticipantProfileResponse participant = participantService.getParticipantById(id);
+        if (participant != null) {
+            return ResponseEntity.ok(participant);
+        } else {
+            return ResponseEntity.notFound().build();
         }
-
-        // Récupérer le profil du participant
-        ParticipantProfileResponse profile = participantService.getMonProfil(email);
-        return ResponseEntity.ok(profile);
-    }
-
-    @PostMapping("/api/me2")
-    @PreAuthorize("hasAnyRole('user')")
-    public ResponseEntity<ParticipantProfileResponse> updateMonProfil(@AuthenticationPrincipal Jwt principal, @RequestBody ProfilRequest profilRequest) {
-        // Récupérer l'email, le nom et le prénom de l'utilisateur connecté
-        String email = principal.getClaimAsString("email");
-        String nom = principal.getClaimAsString("family_name");
-        String prenom = principal.getClaimAsString("given_name");
-
-        // Vérifier que l'email n'est pas vide
-        if (email == null || email.isEmpty()) {
-            return ResponseEntity.badRequest().body(null);
-        }
-
-        // Récupérer le profil du participant
-        ParticipantProfileResponse profile = participantService.updateMonProfil(email, nom, prenom, profilRequest);
-        return ResponseEntity.ok(profile);
     }
 }

@@ -3,6 +3,7 @@ package fr.siovision.voyages.application.service;
 import fr.siovision.voyages.infrastructure.dto.ParticipantRequest;
 import jakarta.annotation.PostConstruct;
 import jakarta.ws.rs.core.Response;
+import lombok.extern.slf4j.Slf4j;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
@@ -15,6 +16,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @Service
 public class KeycloakService {
 
@@ -69,15 +71,25 @@ public class KeycloakService {
 
         String userId = response.getLocation().getPath().replaceAll(".*/([^/]+)$", "$1");
 
-        // Attribution du rôle "user"
-        RoleRepresentation userRole = keycloak.realm(realm).roles().get("user").toRepresentation();
+        // Attribution du rôle "student"
+        RoleRepresentation userRole = keycloak.realm(realm).roles().get("student").toRepresentation();
         keycloak.realm(realm).users().get(userId).roles().realmLevel().add(List.of(userRole));
 
         // Envoi des actions de vérification d'email et de mise à jour du mot de passe
-        keycloak.realm("voyages")
-                .users()
-                .get(userId)
-                .executeActionsEmail(Arrays.asList("VERIFY_EMAIL", "UPDATE_PASSWORD"));
+//        try {
+//            keycloak.realm("voyages")
+//                    .users()
+//                    .get(userId)
+//                    .executeActionsEmail(Arrays.asList("VERIFY_EMAIL", "UPDATE_PASSWORD"));
+//        } catch (jakarta.ws.rs.WebApplicationException ex) {
+//            Response r = ex.getResponse();
+//            String body = r.hasEntity() ? r.readEntity(String.class) : "";
+//            log.error("KC executeActionsEmail failed: status={} body={}", r.getStatus(), body, ex);
+//            throw ex;
+//        } catch (jakarta.ws.rs.ProcessingException ex) {
+//            log.error("KC client processing error", ex);
+//            throw ex;
+//        }
 
         return keycloak.realm(realm).users().get(userId).toRepresentation();
     }
