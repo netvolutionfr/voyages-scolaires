@@ -1,11 +1,15 @@
 package fr.siovision.voyages.application.service;
 
+import fr.siovision.voyages.domain.model.Section;
 import fr.siovision.voyages.domain.model.User;
 import fr.siovision.voyages.domain.model.UserRole;
+import fr.siovision.voyages.infrastructure.dto.SectionDTO;
 import fr.siovision.voyages.infrastructure.dto.UserResponse;
 import fr.siovision.voyages.infrastructure.dto.UserTelephoneRequest;
 import fr.siovision.voyages.infrastructure.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
@@ -73,5 +77,17 @@ public class UserService {
                 user.getTelephone(),
                 user.getRole().name()
         );
+    }
+
+    public Page<UserResponse> getAllUsers(Jwt jwt, String q, Pageable pageable) {
+        Page<User> users = userRepository.search(q, pageable);
+        return users
+                .map(user -> new UserResponse(
+                user.getId(),
+                user.getEmail(),
+                user.getNom(),
+                user.getPrenom(),
+                user.getTelephone(),
+                user.getRole().name()));
     }
 }
