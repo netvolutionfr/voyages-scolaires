@@ -2,11 +2,12 @@ package fr.siovision.voyages.web;
 
 import fr.siovision.voyages.application.service.VoyageService;
 import fr.siovision.voyages.domain.model.Voyage;
-import fr.siovision.voyages.infrastructure.dto.VoyageInscriptionRequest;
-import fr.siovision.voyages.infrastructure.dto.VoyageRequest;
-import fr.siovision.voyages.infrastructure.dto.VoyageParticipantRequest;
-import fr.siovision.voyages.infrastructure.dto.VoyagesOuvertsResponse;
+import fr.siovision.voyages.infrastructure.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,23 +23,24 @@ public class VoyageController {
     private VoyageService voyageService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('admin', 'manager')")
-    public ResponseEntity<Voyage> createVoyage(@RequestBody VoyageRequest voyageRequest) {
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    public ResponseEntity<String> createVoyage(@RequestBody VoyageDTO voyageRequest) {
         // Appeler le service pour créer un nouveau voyage
         Voyage saved = voyageService.createVoyage(voyageRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved.getId().toString());
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('admin', 'manager')")
-    public ResponseEntity<Iterable<Voyage>> getAllVoyages() {
-        // Récupérer tous les voyages
-        Iterable<Voyage> voyages = voyageService.getAllVoyages();
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT', 'PARENT')")
+    public ResponseEntity<Page<VoyageDTO>> list(
+            @PageableDefault(size = 20, sort = "dateDepart", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        Page<VoyageDTO> voyages = voyageService.list(pageable);
         return ResponseEntity.ok(voyages);
     }
 
     @PostMapping("/{voyageId}/participants")
-    @PreAuthorize("hasAnyRole('admin', 'manager')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     public ResponseEntity<Void> addParticipantToVoyage(
             @PathVariable Long voyageId,
             @RequestBody VoyageParticipantRequest request) {
@@ -48,7 +50,7 @@ public class VoyageController {
     }
 
     @GetMapping("/ouverts")
-    @PreAuthorize("hasAnyRole('admin', 'manager', 'user')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'PARENT', 'STUDENT')")
     public ResponseEntity<Iterable<VoyagesOuvertsResponse>> getVoyagesOuverts(Authentication authentication) {
         // Récupérer les voyages ouverts
         Iterable<VoyagesOuvertsResponse> voyages = voyageService.getVoyagesOuverts();
@@ -56,7 +58,7 @@ public class VoyageController {
     }
 
     @PostMapping("/{id}/inscription")
-    @PreAuthorize("hasRole('user')")
+    @PreAuthorize("hasAnyRole('PARENT', 'STUDENT')")
     public ResponseEntity<Void> inscrire(
             @PathVariable Long id,
             @RequestBody VoyageInscriptionRequest request,

@@ -1,16 +1,15 @@
 package fr.siovision.voyages.domain.model;
 
-public enum TypeDocument {
-    PERMIS_DE_CONDUIRE,
-    CARTE_D_IDENTITE,
-    PASSEPORT,
-    CARTE_VITALE,
-    ATTESTATION_ASSURANCE,
-    CARTE_EUROPEENNE_ASSURANCE_MALADIE,
-    VISA,
-    AUTORISATION_SORTIE_TERRITOIRE,
-    ORDONNANCE,
-    CERTIFICAT_MEDICAL,
-    AUTORISATION_PRELEVEMENT,
-    AUTRE
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+
+@Entity
+public class TypeDocument {
+    @Id
+    @GeneratedValue
+    private Long id;
+
+    private String nom; // Nom du document (ex: "Autorisation parentale", "Certificat médical")
+    private String description; // Description du document (optionnel)
 }

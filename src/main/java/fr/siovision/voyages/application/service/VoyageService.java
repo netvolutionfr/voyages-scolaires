@@ -1,19 +1,15 @@
 package fr.siovision.voyages.application.service;
 
 
-import fr.siovision.voyages.domain.model.Participant;
-import fr.siovision.voyages.domain.model.StatutInscription;
-import fr.siovision.voyages.domain.model.Voyage;
-import fr.siovision.voyages.domain.model.VoyageParticipant;
-import fr.siovision.voyages.infrastructure.dto.VoyageInscriptionRequest;
-import fr.siovision.voyages.infrastructure.dto.VoyageRequest;
-import fr.siovision.voyages.infrastructure.dto.VoyageParticipantRequest;
-import fr.siovision.voyages.infrastructure.dto.VoyagesOuvertsResponse;
+import fr.siovision.voyages.domain.model.*;
+import fr.siovision.voyages.infrastructure.dto.*;
 import fr.siovision.voyages.infrastructure.repository.ParticipantRepository;
 import fr.siovision.voyages.infrastructure.repository.VoyageParticipantRepository;
 import fr.siovision.voyages.infrastructure.repository.VoyageRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -30,26 +26,46 @@ public class VoyageService {
     private VoyageParticipantRepository voyageParticipantRepository;
 
     // Méthode pour créer un nouveau voyage
-    public Voyage createVoyage(VoyageRequest voyageRequest) {
+    public Voyage createVoyage(VoyageDTO voyageRequest) {
         // Convertir VoyageDTO en entité Voyage
         Voyage voyage = new Voyage();
         voyage.setNom(voyageRequest.getNom());
         voyage.setDescription(voyageRequest.getDescription());
         voyage.setDestination(voyageRequest.getDestination());
-        voyage.setDateDepart(voyageRequest.getDateDepart());
-        voyage.setDateRetour(voyageRequest.getDateRetour());
+        voyage.setDateDepart(LocalDate.parse(voyageRequest.getDatesVoyage().getFrom()));
+        voyage.setDateRetour(LocalDate.parse(voyageRequest.getDatesVoyage().getTo()));
         voyage.setNombreMaxParticipants(voyageRequest.getNombreMaxParticipants());
-        voyage.setDateDebutInscription(voyageRequest.getDateDebutInscription());
-        voyage.setDateFinInscription(voyageRequest.getDateFinInscription());
+        voyage.setNombreMinParticipants(voyageRequest.getNombreMinParticipants());
+        voyage.setDateDebutInscription(LocalDate.parse(voyageRequest.getDatesInscription().getFrom()));
+        voyage.setDateFinInscription(LocalDate.parse(voyageRequest.getDatesInscription().getTo()));
 
         // Enregistrer le voyage dans la base de données
         return voyageRepository.save(voyage);
     }
 
     // Méthode pour récupérer tous les voyages
-    public Iterable<Voyage> getAllVoyages() {
-        // Utiliser le repository pour récupérer tous les voyages
-        return voyageRepository.findAll();
+    public Page<VoyageDTO> list(Pageable pageable) {
+        Page<Voyage> voyages = voyageRepository.findAll(pageable);
+        return voyages.map(voyage -> {
+            DateRangeDTO datesInscription = new DateRangeDTO(
+                    voyage.getDateDebutInscription().toString(),
+                    voyage.getDateFinInscription().toString()
+            );
+            DateRangeDTO datesVoyage = new DateRangeDTO(
+                    voyage.getDateDepart().toString(),
+                    voyage.getDateRetour().toString()
+            );
+            return new VoyageDTO(
+                    voyage.getId(),
+                    voyage.getNom(),
+                    voyage.getDescription(),
+                    voyage.getDestination(),
+                    datesVoyage,
+                    voyage.getNombreMinParticipants(),
+                    voyage.getNombreMaxParticipants(),
+                    datesInscription
+            );
+        });
     }
 
     public void addParticipantToVoyage(Long voyageId, VoyageParticipantRequest request) {

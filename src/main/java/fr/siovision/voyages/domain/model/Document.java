@@ -21,7 +21,9 @@ public class Document {
     private Long fichierTaille;
     private String fichierUrl;
 
-    @Enumerated(EnumType.STRING)
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(nullable = false)
     private TypeDocument typeDocument;
 
     @Enumerated(EnumType.STRING)

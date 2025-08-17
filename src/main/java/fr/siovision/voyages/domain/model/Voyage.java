@@ -27,9 +27,17 @@ public class Voyage {
     private LocalDate dateDebutInscription;
     private LocalDate dateFinInscription;
 
-
-    @OneToMany(mappedBy = "voyage", cascade = CascadeType.ALL)
+    @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
     private List<VoyageParticipant> participants;
+
+    @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
+    private List<Section> sections;
+
+    @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
+    private List<User> organisateurs;
+
+    @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
+    private List<TypeDocument> documentsObligatoires;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
