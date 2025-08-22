@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 @Service
@@ -32,12 +33,19 @@ public class VoyageService {
         voyage.setNom(voyageRequest.getNom());
         voyage.setDescription(voyageRequest.getDescription());
         voyage.setDestination(voyageRequest.getDestination());
-        voyage.setDateDepart(LocalDate.parse(voyageRequest.getDatesVoyage().getFrom()));
-        voyage.setDateRetour(LocalDate.parse(voyageRequest.getDatesVoyage().getTo()));
+        // Parse format "2025-08-28T22:00:00.000Z"
+        ZonedDateTime dateDepartZoned = ZonedDateTime.parse(voyageRequest.getDatesVoyage().getFrom());
+        ZonedDateTime dateRetourZoned = ZonedDateTime.parse(voyageRequest.getDatesVoyage().getTo());
+        voyage.setDateDepart(dateDepartZoned.toLocalDate());
+        voyage.setDateRetour(dateRetourZoned.toLocalDate());
         voyage.setNombreMaxParticipants(voyageRequest.getNombreMaxParticipants());
         voyage.setNombreMinParticipants(voyageRequest.getNombreMinParticipants());
-        voyage.setDateDebutInscription(LocalDate.parse(voyageRequest.getDatesInscription().getFrom()));
-        voyage.setDateFinInscription(LocalDate.parse(voyageRequest.getDatesInscription().getTo()));
+        // Parse format "2025-08-28T22:00:00.000Z" pour les dates d'inscription
+        ZonedDateTime dateDebutInscriptionZoned = ZonedDateTime.parse(voyageRequest.getDatesInscription().getFrom());
+        ZonedDateTime dateFinInscriptionZoned = ZonedDateTime.parse(voyageRequest.getDatesInscription().getTo());
+        // Convertir les dates zonées en LocalDate
+        voyage.setDateDebutInscription(dateDebutInscriptionZoned.toLocalDate());
+        voyage.setDateFinInscription(dateFinInscriptionZoned.toLocalDate());
 
         // Enregistrer le voyage dans la base de données
         return voyageRepository.save(voyage);
