@@ -3,9 +3,7 @@ package fr.siovision.voyages.domain.model;
 import fr.siovision.voyages.infrastructure.converter.CryptoConverter;
 import fr.siovision.voyages.infrastructure.converter.CryptoDateConverter;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
 
@@ -16,7 +14,9 @@ import java.util.UUID;
 @Entity
 @Table(name = "participant",
         uniqueConstraints = @UniqueConstraint(name="uk_participant_student_user", columnNames = "student_user_id"))
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 public class Participant {

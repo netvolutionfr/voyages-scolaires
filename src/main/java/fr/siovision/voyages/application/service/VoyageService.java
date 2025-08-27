@@ -4,9 +4,12 @@ package fr.siovision.voyages.application.service;
 import fr.siovision.voyages.domain.model.*;
 import fr.siovision.voyages.infrastructure.dto.*;
 import fr.siovision.voyages.infrastructure.repository.ParticipantRepository;
+import fr.siovision.voyages.infrastructure.repository.PaysRepository;
 import fr.siovision.voyages.infrastructure.repository.VoyageParticipantRepository;
 import fr.siovision.voyages.infrastructure.repository.VoyageRepository;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,8 +18,12 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 
+@Slf4j
 @Service
 public class VoyageService {
     @Autowired
@@ -25,8 +32,11 @@ public class VoyageService {
     private ParticipantRepository participantRepository;
     @Autowired
     private VoyageParticipantRepository voyageParticipantRepository;
+    @Autowired
+    private PaysRepository paysRepository;
 
     // Méthode pour créer un nouveau voyage
+    @Transactional
     public Voyage createVoyage(VoyageDTO voyageRequest) {
         // Convertir VoyageDTO en entité Voyage
         Voyage voyage = new Voyage();
@@ -46,6 +56,38 @@ public class VoyageService {
         // Convertir les dates zonées en LocalDate
         voyage.setDateDebutInscription(dateDebutInscriptionZoned.toLocalDate());
         voyage.setDateFinInscription(dateFinInscriptionZoned.toLocalDate());
+
+        Pays pays = paysRepository.findById(voyageRequest.getPaysId())
+                .orElseThrow(() -> new EntityNotFoundException("Pays non trouvé"));
+        voyage.setPays(pays);
+
+        // Selon le pays, copier les formalités depuis FormalitePaysTemplate
+        // Récupérer les formalités du pays
+        List<FormalitePaysTemplate> formalitesPays = pays.getFormalitesPays();
+
+        // Cloner les formalités pour le voyage
+        for (FormalitePaysTemplate fpt : formalitesPays) {
+            FormaliteVoyage fv = new FormaliteVoyage();
+            fv.setAcceptedMime(new LinkedHashSet<>(fpt.getAcceptedMime()));      // ← copie
+            fv.setDelaiConservationApresVoyage(fpt.getDelaiConservationApresVoyage());
+            fv.setDelaiFournitureAvantDepart(fpt.getDelaiFournitureAvantDepart());
+            fv.setMaxSizeMb(fpt.getMaxSizeMb());
+            fv.setNotes(fpt.getNotes());
+            fv.setRequired(fpt.isRequired());
+            fv.setStoreScan(fpt.getStoreScan());
+
+            Map<String, Object> src = fpt.getTripCondition();
+            fv.setTripCondition(src == null ? new LinkedHashMap<>() : new LinkedHashMap<>(src));
+
+            fv.setType(fpt.getType());
+            fv.setTypeDocument(fpt.getTypeDocument());
+            fv.setVoyage(voyage);
+            fv.setManuallyAdded(false);
+            fv.setSourceTemplate(fpt);
+
+            voyage.addFormalite(fv);
+        }
+
 
         // Enregistrer le voyage dans la base de données
         return voyageRepository.save(voyage);
@@ -68,6 +110,7 @@ public class VoyageService {
                     voyage.getNom(),
                     voyage.getDescription(),
                     voyage.getDestination(),
+                    voyage.getPays().getId(),
                     datesVoyage,
                     voyage.getNombreMinParticipants(),
                     voyage.getNombreMaxParticipants(),
