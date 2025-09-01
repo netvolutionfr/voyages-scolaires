@@ -13,14 +13,12 @@ import fr.siovision.voyages.infrastructure.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -40,7 +38,7 @@ public class ParticipantService {
         // 1) AuthZ: only PARENT or ADMIN can create a participant
         User current = currentUserService.getCurrentUser();
         log.info("Current user is {} with roles {}", current.getEmail(), current.getRole());
-        if (!authorizationService.hasAnyRole(current, UserRole.PARENT, UserRole.ADMIN)) {
+        if (authorizationService.hasAnyRole(current, UserRole.PARENT, UserRole.ADMIN)) {
             throw new AccessDeniedException("Only PARENT or ADMIN can create a participant.");
         }
 
@@ -127,7 +125,7 @@ public class ParticipantService {
     public Page<ParticipantProfileResponse> getAllParticipants(String q, Pageable pageable) {
         Page<Participant> participants = participantRepository.search(q, pageable);
         User currentUser = currentUserService.getCurrentUser();
-        if (!authorizationService.hasAnyRole(currentUser, UserRole.ADMIN, UserRole.PARENT)) {
+        if (authorizationService.hasAnyRole(currentUser, UserRole.ADMIN, UserRole.PARENT)) {
             throw new AccessDeniedException("Only ADMIN or PARENT can view participants.");
         }
 
@@ -152,7 +150,7 @@ public class ParticipantService {
                 .orElseThrow(() -> new IllegalArgumentException("Participant not found with email: " + email));
 
         User currentUser = currentUserService.getCurrentUser();
-        if (!authorizationService.hasAnyRole(currentUser, UserRole.ADMIN, UserRole.PARENT)) {
+        if (authorizationService.hasAnyRole(currentUser, UserRole.ADMIN, UserRole.PARENT)) {
             throw new AccessDeniedException("Only ADMIN or PARENT can view participant profiles.");
         }
         
@@ -195,7 +193,7 @@ public class ParticipantService {
                 .orElseThrow(() -> new IllegalArgumentException("Participant not found with id: " + id));
 
         User currentUser = currentUserService.getCurrentUser();
-        if (!authorizationService.hasAnyRole(currentUser, UserRole.ADMIN, UserRole.PARENT)) {
+        if (authorizationService.hasAnyRole(currentUser, UserRole.ADMIN, UserRole.PARENT)) {
             throw new AccessDeniedException("Only ADMIN or PARENT can view participant profiles.");
         }
 

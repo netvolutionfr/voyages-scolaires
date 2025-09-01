@@ -24,7 +24,7 @@ public class PaysController {
             @RequestParam(required = false) String q,
             @PageableDefault(size = 20, sort = "nom", direction = Sort.Direction.ASC) Pageable pageable
     ) {
-        Page<PaysDTO> pays = paysService.list(null, null);
+        Page<PaysDTO> pays = paysService.list(q, pageable);
         return ResponseEntity.ok(pays);
     }
 }

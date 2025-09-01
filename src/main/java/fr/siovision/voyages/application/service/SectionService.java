@@ -3,60 +3,80 @@ package fr.siovision.voyages.application.service;
 import fr.siovision.voyages.domain.model.Section;
 import fr.siovision.voyages.infrastructure.dto.SectionDTO;
 import fr.siovision.voyages.infrastructure.repository.SectionRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class SectionService {
-    @Autowired
-    private SectionRepository sectionRepository;
+    private final SectionRepository sectionRepository;
 
+    @Transactional(readOnly = true)
     public SectionDTO getSectionById(Long id) {
+        Objects.requireNonNull(id, "id ne peut pas être null");
         return sectionRepository.findById(id)
-                .map(section -> new SectionDTO(section.getId(), section.getLibelle(), section.getDescription()))
-                .orElse(null);
+                .map(this::toDto)
+                .orElseThrow(() -> new EntityNotFoundException("Section non trouvée id=" + id));
     }
 
     public SectionDTO createSection(SectionDTO sectionDTO) {
-        // Convert DTO to entity and save
-        System.out.println(sectionDTO);
-        Section section = new Section();
-        section.setLibelle(sectionDTO.getLibelle());
-        section.setDescription(sectionDTO.getDescription());
-        Section savedSection = sectionRepository.save(section);
-
-        // Convert back to DTO
-        return new SectionDTO(savedSection.getId(), savedSection.getLibelle(), savedSection.getDescription());
+        Objects.requireNonNull(sectionDTO, "sectionDTO ne peut pas être null");
+        Section section = toEntity(sectionDTO);
+        Section saved = sectionRepository.save(section);
+        log.info("Section créée id={}", saved.getId());
+        return toDto(saved);
     }
 
+    @Transactional
     public SectionDTO updateSection(Long id, SectionDTO sectionDTO) {
-        // Find the existing section
-        Section section = sectionRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Section not found with id: " + id));
+        Objects.requireNonNull(id, "id ne peut pas être null");
+        Objects.requireNonNull(sectionDTO, "sectionDTO ne peut pas être null");
 
-        // Update fields
-        section.setLibelle(sectionDTO.getLibelle());
-        section.setDescription(sectionDTO.getDescription());
+        Section updated = sectionRepository.findById(id)
+                .map(existing -> {
+                    existing.setLibelle(sectionDTO.getLibelle());
+                    existing.setDescription(sectionDTO.getDescription());
+                    return sectionRepository.save(existing);
+                })
+                .orElseThrow(() -> new EntityNotFoundException("Section non trouvée id=" + id));
 
-        // Save and return updated DTO
-        Section updatedSection = sectionRepository.save(section);
-        return new SectionDTO(updatedSection.getId(), updatedSection.getLibelle(), updatedSection.getDescription());
+        log.info("Section mise à jour id={}", updated.getId());
+        return toDto(updated);
     }
 
+    @Transactional(readOnly = true)
     public Page<SectionDTO> list(String q, Pageable pageable) {
-        Page<Section> sections = sectionRepository.search(q, pageable);
-        return sections.map(section -> new SectionDTO(section.getId(), section.getLibelle(), section.getDescription()));
+        String query = q == null ? "" : q.trim();
+        Page<Section> sections = sectionRepository.search(query, pageable);
+        return sections.map(this::toDto);
     }
 
+    @Transactional
     public void deleteSection(Long id) {
-        // Check if the section exists
+        Objects.requireNonNull(id, "id ne peut pas être null");
         if (!sectionRepository.existsById(id)) {
-            throw new IllegalArgumentException("Section not found with id: " + id);
+            throw new EntityNotFoundException("Section non trouvée id=" + id);
         }
-
-        // Delete the section
         sectionRepository.deleteById(id);
+        log.info("Section supprimée id={}", id);
+    }
+
+    private SectionDTO toDto(Section section) {
+        return new SectionDTO(section.getId(), section.getLibelle(), section.getDescription());
+    }
+
+    private Section toEntity(SectionDTO dto) {
+        Section section = new Section();
+        section.setLibelle(dto.getLibelle());
+        section.setDescription(dto.getDescription());
+        return section;
     }
 }

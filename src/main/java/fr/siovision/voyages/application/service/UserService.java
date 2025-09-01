@@ -1,66 +1,77 @@
 package fr.siovision.voyages.application.service;
 
-import fr.siovision.voyages.domain.model.Section;
 import fr.siovision.voyages.domain.model.User;
 import fr.siovision.voyages.domain.model.UserRole;
-import fr.siovision.voyages.infrastructure.dto.SectionDTO;
 import fr.siovision.voyages.infrastructure.dto.UserResponse;
 import fr.siovision.voyages.infrastructure.dto.UserTelephoneRequest;
 import fr.siovision.voyages.infrastructure.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.UUID;
+import java.util.Collection;
+import java.util.Map;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
-    @Autowired
     private UserRepository userRepository;
 
+    @Transactional
     public UserResponse getOrCreateUserFromToken(Jwt jwt) {
         String keycloakId = jwt.getSubject();
+        UserRole tokenRole = extractRole(jwt);
+
         User user = userRepository.findByKeycloakId(keycloakId).orElseGet(() -> {
             User newuser = new User();
             newuser.setKeycloakId(keycloakId);
             newuser.setEmail(jwt.getClaimAsString("email"));
             newuser.setPrenom(jwt.getClaimAsString("given_name"));
             newuser.setNom(jwt.getClaimAsString("family_name"));
-            newuser.setRole(extractRole(jwt)); // À adapter selon ton token
+            newuser.setRole(tokenRole);
             return userRepository.save(newuser);
         });
-        // Forcer le rôle à partir du token s'il est différent
-        if (user.getRole() == null || user.getRole() == UserRole.UNKNOWN || user.getRole() != extractRole(jwt)) {
-            user.setRole(extractRole(jwt));
-            userRepository.save(user);
+
+        // Mise à jour éventuelle si le rôle a changé (ou est inconnu)
+        if (user.getRole() == null || user.getRole() == UserRole.UNKNOWN || user.getRole() != tokenRole) {
+            user.setRole(tokenRole);
+            user = userRepository.save(user);
         }
 
-        return new UserResponse(
-                user.getPublicId(),
-                user.getEmail(),
-                user.getNom(),
-                user.getPrenom(),
-                user.getTelephone(),
-                user.getRole().name()
-        );
+        return toResponse(user);
     }
 
     private UserRole extractRole(Jwt jwt) {
-        var roles = jwt.getClaimAsMap("realm_access");
-        if (roles != null && roles.containsKey("roles")) {
-            List<String> roleList = (List<String>) roles.get("roles");
-            if (roleList.contains("admin")) return UserRole.ADMIN;
-            if (roleList.contains("teacher")) return UserRole.TEACHER;
-            if (roleList.contains("student")) return UserRole.STUDENT;
-            if (roleList.contains("parent")) return UserRole.PARENT;
+        Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
+        if  (realmAccess == null) return UserRole.UNKNOWN;
+
+        Object rolesObj = realmAccess.get("roles");
+        if (!(rolesObj instanceof Collection<?> roles)) {
+            return UserRole.UNKNOWN;
         }
+
+
+        boolean isAdmin = roles.stream().anyMatch(r -> "admin".equalsIgnoreCase(String.valueOf(r)));
+        if (isAdmin) return UserRole.ADMIN;
+
+        boolean isTeacher = roles.stream().anyMatch(r -> "teacher".equalsIgnoreCase(String.valueOf(r)));
+        if (isTeacher) return UserRole.TEACHER;
+
+        boolean isStudent = roles.stream().anyMatch(r -> "student".equalsIgnoreCase(String.valueOf(r)));
+        if (isStudent) return UserRole.STUDENT;
+
+        boolean isParent = roles.stream().anyMatch(r -> "parent".equalsIgnoreCase(String.valueOf(r)));
+        if (isParent) return UserRole.PARENT;
+
         return UserRole.UNKNOWN;
     }
 
+    @Transactional
     public UserResponse updateUserTelephone(Jwt jwt, UserTelephoneRequest request) {
         String keycloakId = jwt.getSubject();
         User user = userRepository.findByKeycloakId(keycloakId)
@@ -69,25 +80,29 @@ public class UserService {
         user.setTelephone(request.getTelephone());
         userRepository.save(user);
 
+        return toResponse(user);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<UserResponse> getAllUsers(Jwt jwt, String q, Pageable pageable) {
+        // Vérification d'autorisation minimale: ADMIN requis
+        if (extractRole(jwt) != UserRole.ADMIN) {
+            throw new AccessDeniedException("Accès refusé: rôle ADMIN requis pour lister les utilisateurs.");
+        }
+
+        Page<User> users = userRepository.search(q, pageable);
+        return users
+                .map(this::toResponse);
+    }
+
+    private UserResponse toResponse(User user) {
         return new UserResponse(
                 user.getPublicId(),
                 user.getEmail(),
                 user.getNom(),
                 user.getPrenom(),
                 user.getTelephone(),
-                user.getRole().name()
+                user.getRole() != null ? user.getRole().name() : UserRole.UNKNOWN.name()
         );
-    }
-
-    public Page<UserResponse> getAllUsers(Jwt jwt, String q, Pageable pageable) {
-        Page<User> users = userRepository.search(q, pageable);
-        return users
-                .map(user -> new UserResponse(
-                user.getPublicId(),
-                user.getEmail(),
-                user.getNom(),
-                user.getPrenom(),
-                user.getTelephone(),
-                user.getRole().name()));
     }
 }

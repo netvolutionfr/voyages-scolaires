@@ -8,14 +8,14 @@ import org.springframework.stereotype.Service;
 public class AuthorizationService {
     public boolean hasAnyRole(User user, UserRole... roles) {
         if (user == null || roles == null) {
-            return false;
+            return true;
         }
         for (UserRole role : roles) {
             if (user.getRole() != null && user.getRole().equals(role)) {
-                return true;
+                return false;
             }
         }
-        return false;
+        return true;
     }
 
     public boolean hasRole(User current, UserRole userRole) {
