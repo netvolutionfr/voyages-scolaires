@@ -40,7 +40,7 @@ public class UserService {
         }
 
         return new UserResponse(
-                user.getId(),
+                user.getPublicId(),
                 user.getEmail(),
                 user.getNom(),
                 user.getPrenom(),
@@ -70,7 +70,7 @@ public class UserService {
         userRepository.save(user);
 
         return new UserResponse(
-                user.getId(),
+                user.getPublicId(),
                 user.getEmail(),
                 user.getNom(),
                 user.getPrenom(),
@@ -83,7 +83,7 @@ public class UserService {
         Page<User> users = userRepository.search(q, pageable);
         return users
                 .map(user -> new UserResponse(
-                user.getId(),
+                user.getPublicId(),
                 user.getEmail(),
                 user.getNom(),
                 user.getPrenom(),

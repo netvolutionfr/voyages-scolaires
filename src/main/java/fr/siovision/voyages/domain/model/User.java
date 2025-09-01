@@ -15,9 +15,14 @@ import java.util.UUID;
 @AllArgsConstructor
 @Table(name = "users")
 public class User {
-    @GeneratedValue
     @Id
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cust_seq")
+    @SequenceGenerator(name = "cust_seq", sequenceName = "cust_seq", allocationSize = 50)
+    private Long id;
+
+    @EqualsAndHashCode.Include
+    @Column(nullable = false, updatable = false, unique = true)
+    private UUID publicId = UUID.randomUUID();
 
     @Column(unique = true)
     String keycloakId; // `sub` du token JWT

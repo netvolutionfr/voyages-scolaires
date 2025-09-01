@@ -7,7 +7,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.UUID;
 
 
 @Entity
@@ -18,9 +18,14 @@ import java.util.List;
 @AllArgsConstructor
 public class Voyage {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @EqualsAndHashCode.Include
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cust_seq")
+    @SequenceGenerator(name = "cust_seq", sequenceName = "cust_seq", allocationSize = 50)
     private Long id;
+
+    @EqualsAndHashCode.Include
+    @Column(nullable = false, updatable = false, unique = true)
+    private UUID publicId = UUID.randomUUID();
+
     private String nom;
     private String description;
     private String destination;

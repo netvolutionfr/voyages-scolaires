@@ -18,10 +18,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -123,7 +120,7 @@ public class VoyageService {
         Voyage voyage = voyageRepository.findById(voyageId)
                 .orElseThrow(() -> new EntityNotFoundException("Voyage non trouvé"));
 
-        Participant participant = participantRepository.findById(request.getParticipantId())
+        Participant participant = participantRepository.findByPublicId(request.getParticipantId())
                 .orElseThrow(() -> new EntityNotFoundException("Participant non trouvé"));
 
         VoyageParticipant vp = new VoyageParticipant();
@@ -186,4 +183,61 @@ public class VoyageService {
         voyageParticipantRepository.save(vp);
     }
 
+    public VoyageDetailDTO getVoyageById(Long id) {
+        Voyage voyage = voyageRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Voyage non trouvé"));
+
+        List<FormaliteVoyageDTO> formalites = voyage.getFormalites().stream()
+                .map(fv -> {
+                    TypeDocumentDTO typeDocument = new TypeDocumentDTO(
+                            fv.getTypeDocument().getId(),
+                            fv.getTypeDocument().getAbr(),
+                            fv.getTypeDocument().getNom(),
+                            fv.getTypeDocument().getDescription()
+                    );
+                    return new FormaliteVoyageDTO(
+                            fv.getId(),
+                            typeDocument,
+                            fv.getType(),
+                            fv.isRequired(),
+                            fv.getDelaiFournitureAvantDepart(),
+                            fv.getAcceptedMime(),
+                            fv.getMaxSizeMb(),
+                            fv.getDelaiConservationApresVoyage(),
+                            fv.isStoreScan(),
+                            fv.getTripCondition(),
+                            fv.getNotes(),
+                            fv.isManuallyAdded()
+                    );
+                }).toList();
+
+        PaysDTO pays = new PaysDTO(
+                voyage.getPays().getId(),
+                voyage.getPays().getNom()
+        );
+        DateRangeDTO datesInscription = new DateRangeDTO(
+                voyage.getDateDebutInscription().toString(),
+                voyage.getDateFinInscription().toString()
+        );
+        DateRangeDTO datesVoyage = new DateRangeDTO(
+                voyage.getDateDepart().toString(),
+                voyage.getDateRetour().toString()
+        );
+
+        return new VoyageDetailDTO(
+                voyage.getId(),
+                voyage.getNom(),
+                voyage.getDescription(),
+                voyage.getDestination(),
+                new PaysDTO(
+                        voyage.getPays().getId(),
+                        voyage.getPays().getNom()
+                ),
+                datesVoyage,
+                voyage.getNombreMinParticipants(),
+                voyage.getNombreMaxParticipants(),
+                datesInscription,
+                formalites
+        );
+    }
 }

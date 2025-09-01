@@ -21,8 +21,13 @@ import java.util.UUID;
 @AllArgsConstructor
 public class Participant {
     @Id
-    @GeneratedValue
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cust_seq")
+    @SequenceGenerator(name = "cust_seq", sequenceName = "cust_seq", allocationSize = 50)
+    private Long id;
+
+    @EqualsAndHashCode.Include
+    @Column(nullable = false, updatable = false, unique = true)
+    private UUID publicId = UUID.randomUUID();
 
     @Column(nullable=false)
     private String nom;

@@ -1,8 +1,6 @@
 package fr.siovision.voyages.domain.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,7 +11,8 @@ import lombok.Setter;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class TypeDocument {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cust_seq")
+    @SequenceGenerator(name = "cust_seq", sequenceName = "cust_seq", allocationSize = 50)
     private Long id;
 
     private String abr; // Abréviation du type de document (ex: "cni", "passeport", "visa")

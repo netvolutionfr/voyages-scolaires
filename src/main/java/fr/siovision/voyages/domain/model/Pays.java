@@ -14,8 +14,10 @@ import java.util.List;
 @AllArgsConstructor
 public class Pays {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cust_seq")
+    @SequenceGenerator(name = "cust_seq", sequenceName = "cust_seq", allocationSize = 50)
     private Long id;
+
     private String nom;
 
     @OneToMany(mappedBy = "pays",

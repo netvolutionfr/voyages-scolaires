@@ -24,9 +24,9 @@ import java.util.Set;
 @AllArgsConstructor
 public class FormalitePaysTemplate {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cust_seq")
+    @SequenceGenerator(name = "cust_seq", sequenceName = "cust_seq", allocationSize = 50)
     private Long id;
-
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "pays_id", referencedColumnName = "id")

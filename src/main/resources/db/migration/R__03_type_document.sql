@@ -1,0 +1,12 @@
+INSERT INTO public.type_document (id, description, nom, abr) VALUES (1, 'Cerfa 15646*01', 'Autorisation de sortie du territoire (AST)', 'ast');
+INSERT INTO public.type_document (id, description, nom, abr) VALUES (2, null, 'Copie de la pièce d''identité du parent signataire de l''AST', 'ast_cni');
+INSERT INTO public.type_document (id, description, nom, abr) VALUES (3, 'Visa électronique pour le Canada', 'Autorisation eTA (arrivée par avion)', 'ca_eta');
+INSERT INTO public.type_document (id, description, nom, abr) VALUES (4, null, 'Carte Européenne d’Assurance Maladie', 'ceam');
+INSERT INTO public.type_document (id, description, nom, abr) VALUES (5, 'En cours de validité', 'Carte nationale d’identité (ou passeport)', 'cni');
+INSERT INTO public.type_document (id, description, nom, abr) VALUES (6, 'Visa électronique pour l''Égypte', 'Visa / e-Visa Égypte', 'eg_visa');
+INSERT INTO public.type_document (id, description, nom, abr) VALUES (7, null, 'Fiche sanitaire', 'health_form');
+INSERT INTO public.type_document (id, description, nom, abr) VALUES (8, 'Visa électronique pour l''Indonésie', 'e-VOA / Visa à l’arrivée (preuve)', 'id_evoa');
+INSERT INTO public.type_document (id, description, nom, abr) VALUES (10, 'En cours de validité + 6 mois après la fin du voyage', 'Passeport', 'passport');
+INSERT INTO public.type_document (id, description, nom, abr) VALUES (11, 'Visa électronique pour les USA', 'Autorisation ESTA', 'us_esta');
+INSERT INTO public.type_document (id, description, nom, abr) VALUES (12, 'Visa électronique pour le Royaume Uni', 'Autorisation eTA', 'uk_eta');
+INSERT INTO public.type_document (id, description, nom, abr) VALUES (9, null, 'Attestation d’assurance scolaire (RC + IA)', 'insurance');

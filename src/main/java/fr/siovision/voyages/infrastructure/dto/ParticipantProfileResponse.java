@@ -12,7 +12,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ParticipantProfileResponse {
-    private UUID id;
+    private Long id;
     private String nom;
     private String prenom;
     private String sexe; // M, F, Autre
@@ -21,7 +21,7 @@ public class ParticipantProfileResponse {
     private String dateNaissance;
     private Long sectionId;
     private String sectionLibelle; // Nom de la section (optionnel, peut être ajouté si nécessaire)
-    private UUID legalGuardianId; // ID du parent légal primaire (si mineur)
+    private Long legalGuardianId; // ID du parent légal primaire (si mineur)
     private String legalGuardianName; // Nom du parent légal primaire (si mineur)
     private String legalGuardianEmail; // Email du parent légal primaire (si mineur)
 

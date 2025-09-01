@@ -14,7 +14,7 @@ import java.util.UUID;
 public interface ParticipantRepository extends JpaRepository<Participant, UUID> {
     Optional<Participant> findByEmail(String email);
 
-    Optional<Participant> findByStudentAccountId(UUID id);
+    Optional<Participant> findByStudentAccountId(Long id);
 
     Optional<Participant> findByEmailIgnoreCase(String email);
     @Query("""
@@ -24,4 +24,6 @@ public interface ParticipantRepository extends JpaRepository<Participant, UUID> 
                    OR lower(p.prenom) LIKE lower(concat('%', :q, '%'))
             """)
     Page<Participant> search(@Param("q") String q, Pageable pageable);
+
+    Optional<Participant> findByPublicId(UUID participantId);
 }

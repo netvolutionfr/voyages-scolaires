@@ -23,10 +23,9 @@ import java.util.Set;
 @AllArgsConstructor
 public class FormaliteVoyage {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @EqualsAndHashCode.Include
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cust_seq")
+    @SequenceGenerator(name = "cust_seq", sequenceName = "cust_seq", allocationSize = 50)
     private Long id;
-
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "voyage_id", referencedColumnName = "id")
@@ -70,7 +69,7 @@ public class FormaliteVoyage {
 
 
     @Column(name = "store_scan")
-    private Boolean storeScan = Boolean.FALSE; // mode vérif sans copie (false) vs scan conservé (true)
+    private boolean storeScan = false; // mode vérif sans copie (false) vs scan conservé (true)
 
 
     @Type(JsonType.class)

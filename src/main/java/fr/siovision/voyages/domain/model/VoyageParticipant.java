@@ -14,7 +14,8 @@ import java.util.List;
 @AllArgsConstructor
 public class VoyageParticipant {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cust_seq")
+    @SequenceGenerator(name = "cust_seq", sequenceName = "cust_seq", allocationSize = 50)
     private Long id;
 
     private boolean accompagnateur;

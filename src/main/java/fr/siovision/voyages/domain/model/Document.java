@@ -14,8 +14,10 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class Document {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cust_seq")
+    @SequenceGenerator(name = "cust_seq", sequenceName = "cust_seq", allocationSize = 50)
     private Long id;
+
     private String fichierNom;
     private String fichierType;
     private Long fichierTaille;

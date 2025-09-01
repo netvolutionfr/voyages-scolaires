@@ -39,6 +39,14 @@ public class VoyageController {
         return ResponseEntity.ok(voyages);
     }
 
+    @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT', 'PARENT')")
+    @RequestMapping("/{id}")
+    public ResponseEntity<VoyageDetailDTO> getVoyageById(@PathVariable Long id) {
+        VoyageDetailDTO voyage = voyageService.getVoyageById(id);
+        return ResponseEntity.ok(voyage);
+    }
+
     @PostMapping("/{voyageId}/participants")
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     public ResponseEntity<Void> addParticipantToVoyage(
