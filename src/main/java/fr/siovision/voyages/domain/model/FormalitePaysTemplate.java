@@ -25,7 +25,7 @@ import java.util.Set;
 public class FormalitePaysTemplate {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cust_seq")
-    @SequenceGenerator(name = "cust_seq", sequenceName = "cust_seq", allocationSize = 50)
+    @SequenceGenerator(name = "cust_seq", sequenceName = "cust_seq")
     private Long id;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)

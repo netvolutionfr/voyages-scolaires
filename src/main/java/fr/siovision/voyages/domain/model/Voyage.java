@@ -72,9 +72,4 @@ public class Voyage {
         formalites.add(f);
         f.setVoyage(this);
     }
-
-    public void removeFormalite(FormaliteVoyage f) {
-        formalites.remove(f);
-        f.setVoyage(null);
-    }
 }
