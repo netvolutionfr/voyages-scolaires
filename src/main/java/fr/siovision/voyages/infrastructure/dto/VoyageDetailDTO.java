@@ -1,6 +1,5 @@
 package fr.siovision.voyages.infrastructure.dto;
 
-import fr.siovision.voyages.domain.model.FormaliteVoyage;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,6 +14,7 @@ public class VoyageDetailDTO {
     private String nom;
     private String description;
     private String destination;
+    private Integer participationDesFamilles; // en centimes d'euros
     private PaysDTO pays; // Détails du pays
     private DateRangeDTO datesVoyage; // Dates du voyage
     private int nombreMinParticipants;

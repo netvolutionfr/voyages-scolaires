@@ -24,7 +24,7 @@ import java.util.Set;
 public class FormaliteVoyage {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cust_seq")
-    @SequenceGenerator(name = "cust_seq", sequenceName = "cust_seq", allocationSize = 50)
+    @SequenceGenerator(name = "cust_seq", sequenceName = "cust_seq")
     private Long id;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
@@ -69,7 +69,7 @@ public class FormaliteVoyage {
 
 
     @Column(name = "store_scan")
-    private boolean storeScan = false; // mode vérif sans copie (false) vs scan conservé (true)
+    private Boolean storeScan = Boolean.TRUE; // pour FILE, si on stocke le scan dans notre système
 
 
     @Type(JsonType.class)
@@ -82,4 +82,9 @@ public class FormaliteVoyage {
 
     @Column(name = "manually_added")
     private boolean manuallyAdded = false; // true si créé/édité manuellement après clonage
+
+    public Boolean getStoreScan() {
+        return storeScan != null ? storeScan : Boolean.TRUE;
+    }
+
 }

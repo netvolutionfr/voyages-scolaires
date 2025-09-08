@@ -12,7 +12,8 @@ public class VoyageDTO {
     private String nom;
     private String description;
     private String destination;
-    private Long paysId; // Référence vers l'entité Pays
+    private Integer participationDesFamilles; // en centimes d'euros
+    private PaysDTO pays;
     private DateRangeDTO datesVoyage; // Dates du voyage
     private int nombreMinParticipants;
     private int nombreMaxParticipants;

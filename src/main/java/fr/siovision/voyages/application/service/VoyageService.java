@@ -10,16 +10,13 @@ import fr.siovision.voyages.infrastructure.repository.VoyageRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.util.*;
 
 @Slf4j
@@ -42,17 +39,18 @@ public class VoyageService {
         voyage.setNom(voyageRequest.getNom());
         voyage.setDescription(voyageRequest.getDescription());
         voyage.setDestination(voyageRequest.getDestination());
+        voyage.setParticipationDesFamilles(voyageRequest.getParticipationDesFamilles());
         voyage.setNombreMaxParticipants(voyageRequest.getNombreMaxParticipants());
         voyage.setNombreMinParticipants(voyageRequest.getNombreMinParticipants());
 
         // Parsing sécurisée des dates
-        voyage.setDateDepart(parseZonedDateToLocal(voyageRequest.getDatesVoyage().getFrom(), "datesVoyage.from"));
-        voyage.setDateRetour(parseZonedDateToLocal(voyageRequest.getDatesVoyage().getTo(), "datesVoyage.to"));
-        voyage.setDateDebutInscription(parseZonedDateToLocal(voyageRequest.getDatesInscription().getFrom(), "datesInscription.from"));
-        voyage.setDateFinInscription(parseZonedDateToLocal(voyageRequest.getDatesInscription().getTo(), "datesInscription.to"));
+        voyage.setDateDepart(voyageRequest.getDatesVoyage().getFrom());
+        voyage.setDateRetour(voyageRequest.getDatesVoyage().getTo());
+        voyage.setDateDebutInscription(voyageRequest.getDatesInscription().getFrom());
+        voyage.setDateFinInscription(voyageRequest.getDatesInscription().getTo());
 
-        Pays pays = paysRepository.findById(voyageRequest.getPaysId())
-                .orElseThrow(() -> new EntityNotFoundException("Pays non trouvé id=" + voyageRequest.getPaysId()));
+        Pays pays = paysRepository.findById(voyageRequest.getPays().getId())
+                .orElseThrow(() -> new EntityNotFoundException("Pays non trouvé id=" + voyageRequest.getPays().getId()));
         voyage.setPays(pays);
 
         // Clonage sécurisé des formalités
@@ -144,13 +142,13 @@ public class VoyageService {
                 .toList();
 
         DateRangeDTO datesInscription = new DateRangeDTO(
-                voyage.getDateDebutInscription().toString(),
-                voyage.getDateFinInscription().toString()
+                voyage.getDateDebutInscription(),
+                voyage.getDateFinInscription()
         );
 
         DateRangeDTO datesVoyage = new DateRangeDTO(
-                voyage.getDateDepart().toString(),
-                voyage.getDateRetour().toString()
+                voyage.getDateDepart(),
+                voyage.getDateRetour()
         );
 
         return new VoyageDetailDTO(
@@ -158,6 +156,7 @@ public class VoyageService {
                 voyage.getNom(),
                 voyage.getDescription(),
                 voyage.getDestination(),
+                voyage.getParticipationDesFamilles(),
                 new PaysDTO(voyage.getPays().getId(), voyage.getPays().getNom()),
                 datesVoyage,
                 voyage.getNombreMinParticipants(),
@@ -176,15 +175,6 @@ public class VoyageService {
         if (dto.getDatesVoyage().getFrom() == null || dto.getDatesVoyage().getTo() == null
                 || dto.getDatesInscription().getFrom() == null || dto.getDatesInscription().getTo() == null) {
             throw new IllegalArgumentException("Tous les champs de date doivent être fournis.");
-        }
-    }
-
-    private LocalDate parseZonedDateToLocal(String input, String fieldName) {
-        try {
-            return ZonedDateTime.parse(input).toLocalDate();
-        } catch (DateTimeException e) {
-            log.error("Erreur parsing date pour {}: {}", fieldName, input, e);
-            throw new IllegalArgumentException("Format de date invalide pour " + fieldName + ": " + input, e);
         }
     }
 
@@ -228,7 +218,7 @@ public class VoyageService {
                 fv.getAcceptedMime(),
                 fv.getMaxSizeMb(),
                 fv.getDelaiConservationApresVoyage(),
-                fv.isStoreScan(),
+                fv.getStoreScan(),
                 fv.getTripCondition(),
                 fv.getNotes(),
                 fv.isManuallyAdded()
@@ -237,19 +227,21 @@ public class VoyageService {
 
     private VoyageDTO mapToVoyageDTO(Voyage voyage) {
         DateRangeDTO datesInscription = new DateRangeDTO(
-                voyage.getDateDebutInscription().toString(),
-                voyage.getDateFinInscription().toString()
+                voyage.getDateDebutInscription(),
+                voyage.getDateFinInscription()
         );
         DateRangeDTO datesVoyage = new DateRangeDTO(
-                voyage.getDateDepart().toString(),
-                voyage.getDateRetour().toString()
+                voyage.getDateDepart(),
+                voyage.getDateRetour()
         );
+        PaysDTO paysDTO = new PaysDTO(voyage.getPays().getId(), voyage.getPays().getNom());
         return new VoyageDTO(
                 voyage.getId(),
                 voyage.getNom(),
                 voyage.getDescription(),
                 voyage.getDestination(),
-                voyage.getPays().getId(),
+                voyage.getParticipationDesFamilles(),
+                paysDTO,
                 datesVoyage,
                 voyage.getNombreMinParticipants(),
                 voyage.getNombreMaxParticipants(),

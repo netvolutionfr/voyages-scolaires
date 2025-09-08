@@ -65,7 +65,7 @@ public class FormalitePaysTemplate {
 
 
     @Column(name = "store_scan")
-    private Boolean storeScan = Boolean.FALSE; // mode vérif sans copie (false) vs scan conservé (true)
+    private Boolean storeScan = Boolean.TRUE; // pour FILE, si on stocke le scan dans notre système
 
 
     @Type(JsonType.class)
@@ -75,4 +75,8 @@ public class FormalitePaysTemplate {
 
     @Column(length = 512)
     private String notes;
+
+    public Boolean getStoreScan() {
+        return storeScan != null ? storeScan : Boolean.TRUE;
+    }
 }

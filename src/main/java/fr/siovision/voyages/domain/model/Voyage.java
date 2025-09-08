@@ -19,7 +19,7 @@ import java.util.UUID;
 public class Voyage {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cust_seq")
-    @SequenceGenerator(name = "cust_seq", sequenceName = "cust_seq", allocationSize = 50)
+    @SequenceGenerator(name = "cust_seq", sequenceName = "cust_seq")
     private Long id;
 
     @EqualsAndHashCode.Include
@@ -29,6 +29,7 @@ public class Voyage {
     private String nom;
     private String description;
     private String destination;
+    private Integer participationDesFamilles; // en centimes d'euros
     @ManyToOne(fetch = FetchType.LAZY)
     private Pays pays;
     private LocalDate dateDepart;
