@@ -6,6 +6,7 @@ import fr.siovision.voyages.infrastructure.dto.UserResponse;
 import fr.siovision.voyages.infrastructure.dto.UserTelephoneRequest;
 import fr.siovision.voyages.infrastructure.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
@@ -16,16 +17,23 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collection;
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public UserResponse getOrCreateUserFromToken(Jwt jwt) {
         String keycloakId = jwt.getSubject();
+        log.info("Authenticating user with Keycloak ID: {}", keycloakId);
         UserRole tokenRole = extractRole(jwt);
+        if (tokenRole == UserRole.UNKNOWN) {
+            log.warn("User with Keycloak ID {} has no recognized role. Assigning UNKNOWN role.", keycloakId);
+        } else {
+            log.info("User with Keycloak ID {} has role: {}", keycloakId, tokenRole);
+        }
 
         User user = userRepository.findByKeycloakId(keycloakId).orElseGet(() -> {
             User newuser = new User();
@@ -34,8 +42,11 @@ public class UserService {
             newuser.setPrenom(jwt.getClaimAsString("given_name"));
             newuser.setNom(jwt.getClaimAsString("family_name"));
             newuser.setRole(tokenRole);
+            log.info("Creating new user: {}", newuser);
             return userRepository.save(newuser);
         });
+
+        log.info("User found or created: {}", user);
 
         // Mise à jour éventuelle si le rôle a changé (ou est inconnu)
         if (user.getRole() == null || user.getRole() == UserRole.UNKNOWN || user.getRole() != tokenRole) {
