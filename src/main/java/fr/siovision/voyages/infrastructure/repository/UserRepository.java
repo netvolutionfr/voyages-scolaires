@@ -1,6 +1,5 @@
 package fr.siovision.voyages.infrastructure.repository;
 
-import fr.siovision.voyages.domain.model.Section;
 import fr.siovision.voyages.domain.model.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,4 +20,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
                    OR lower(u.nom) LIKE lower(concat('%', :q, '%'))
             """)
     Page<User> search(@Param("q") String q, Pageable pageable);
+
+    Optional<User> findByEmail(String email);
 }

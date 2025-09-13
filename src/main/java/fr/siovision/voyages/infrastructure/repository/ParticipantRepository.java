@@ -1,7 +1,6 @@
 package fr.siovision.voyages.infrastructure.repository;
 
 import fr.siovision.voyages.domain.model.Participant;
-import fr.siovision.voyages.domain.model.Section;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -26,4 +25,6 @@ public interface ParticipantRepository extends JpaRepository<Participant, UUID> 
     Page<Participant> search(@Param("q") String q, Pageable pageable);
 
     Optional<Participant> findByPublicId(UUID participantId);
+
+    Optional<Participant> findByStudentAccount_Email(String studentEmail);
 }

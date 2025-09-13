@@ -33,11 +33,6 @@ public class User {
     String prenom; // prénom de l'utilisateur
     String telephone;
 
-    // Enfants
-    @ManyToOne
-    @JoinColumn(name = "parent_user_id")
-    Participant participant; // Lien vers le participant associé
-
     @Enumerated(EnumType.STRING)
     UserRole role; // PARENT, STUDENT, ADMIN
 

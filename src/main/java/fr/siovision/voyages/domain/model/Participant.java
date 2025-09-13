@@ -53,15 +53,14 @@ public class Participant {
     @JoinColumn(name = "section_id", nullable = false)
     private Section section;
 
-    // parent légal primaire (si mineur)
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="parent_user_id")
-    private User legalGuardian;
 
-    // compte de l'élève (optionnel : mineur avec accès; obligatoire si majeur autonome)
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="student_user_id", unique = true)
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name="student_user_id", unique = true, nullable = false)
     private User studentAccount;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="legal_guardian_user_id") // parent ou tuteur légal, null si majeur
+    private User legalGuardian;
 
     // pratique : cache de l’email de contact principal (peut rester nul)
     private String primaryContactEmail;
