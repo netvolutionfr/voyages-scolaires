@@ -57,6 +57,7 @@ public class SecurityConfig {
                                 "/swagger-ui.html"
                         ).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/participants/**").hasAnyRole("ADMIN","PARENT")
                         .requestMatchers("/**").authenticated()
                 )
@@ -64,7 +65,7 @@ public class SecurityConfig {
                         .jwt(jwt -> jwt
                                 .jwtAuthenticationConverter(jwtAuthenticationConverter()))
                 );
-;
+
         return http.build();
     }
 
@@ -76,13 +77,12 @@ public class SecurityConfig {
             Object realmAccess = jwt.getClaim("realm_access");
 
             if (realmAccess instanceof Map<?, ?> map && map.get("roles") instanceof List<?> rolesList) {
-                List<GrantedAuthority> authorities = rolesList.stream()
+
+                return rolesList.stream()
                         .filter(String.class::isInstance)
                         .map(role -> new SimpleGrantedAuthority("ROLE_" + ((String) role).toUpperCase()))
                         .map(granted -> (GrantedAuthority) granted) // <-- assure le bon type
                         .toList();
-
-                return authorities;
             }
 
             return List.of();

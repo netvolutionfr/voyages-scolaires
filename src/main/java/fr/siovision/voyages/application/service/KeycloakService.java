@@ -34,6 +34,9 @@ public class KeycloakService {
 
     private Keycloak keycloak;
 
+    @Value("${APP.FRONT_URL:http://localhost:5173}")
+    private String frontUrl;
+
     @PostConstruct
     public void init() {
         keycloak = KeycloakBuilder.builder()
@@ -64,12 +67,16 @@ public class KeycloakService {
         user.setLastName(dto.getNom());
         user.setAttributes(Map.of("locale", List.of("fr")));
 
-        Response response = keycloak.realm(realm).users().create(user);
-        if (response.getStatus() != 201) {
-            throw new RuntimeException("Erreur lors de la création utilisateur Keycloak : " + response.getStatus());
-        }
+        String userId;
+        try (Response response = keycloak.realm(realm).users().create(user)) {
+            if (response.getStatus() != 201) {
+                throw new RuntimeException("Erreur lors de la création utilisateur Keycloak : " + response.getStatus());
+            }
 
-        String userId = response.getLocation().getPath().replaceAll(".*/([^/]+)$", "$1");
+            userId = response.getLocation().getPath().replaceAll(".*/([^/]+)$", "$1");
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors de la création utilisateur Keycloak", e);
+        }
 
         // Attribution du rôle "student"
         RoleRepresentation userRole = keycloak.realm(realm).roles().get("student").toRepresentation();
@@ -92,6 +99,16 @@ public class KeycloakService {
 //        }
 
         return keycloak.realm(realm).users().get(userId).toRepresentation();
+    }
+
+    public void sendExecuteActionsEmail(String s, String[] actions) {
+        int lifespan = 3600; // secondes de validité du lien (1h ici)
+        String redirectUri = frontUrl + "/apres-premier-acces";
+
+        keycloak.realm(realm)
+                .users()
+                .get(s)
+                .executeActionsEmail(clientId, redirectUri, lifespan, Arrays.asList(actions));
     }
 }
 
