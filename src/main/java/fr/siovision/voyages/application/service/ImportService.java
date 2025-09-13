@@ -169,7 +169,7 @@ public class ImportService {
     @Transactional
     void handleTeacher(ImportRow row) {
         log.info("Handling teacher import for email: {}", row.getEmail());
-        User user = userRepo.findByEmail(row.getEmail()).orElseGet(() -> {
+        userRepo.findByEmail(row.getEmail()).orElseGet(() -> {
             User newuser = new User();
             newuser.setEmail(row.getEmail());
             newuser.setPrenom(row.getPrenom());
