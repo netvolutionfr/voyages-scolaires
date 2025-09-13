@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.NoSuchAlgorithmException;
+
 @RestController
 @RequestMapping("/api/public")
 public class FirstLoginController {
@@ -20,7 +22,7 @@ public class FirstLoginController {
 
     @PostMapping("/first-login")
     public ResponseEntity<FirstLoginResponse> firstLogin(@Valid @RequestBody FirstLoginRequest req,
-                                                         @RequestHeader(value = "X-Request-Id", required = false) String reqId) {
+                                                         @RequestHeader(value = "X-Request-Id", required = false) String reqId) throws NoSuchAlgorithmException {
         firstLoginService.handleFirstLogin(req.email().trim(), reqId);
         // Toujours réponse générique
         return ResponseEntity.ok(FirstLoginResponse.generic());

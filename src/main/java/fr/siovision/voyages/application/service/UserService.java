@@ -107,12 +107,15 @@ public class UserService {
     }
 
     private UserResponse toResponse(User user) {
+        // Validated = si l'utilisateur s'est déjà connecté au moins une fois et a un id Keycloak
+        Boolean validated = user.getKeycloakId() != null && !user.getKeycloakId().isBlank();
         return new UserResponse(
                 user.getPublicId(),
                 user.getEmail(),
                 user.getNom(),
                 user.getPrenom(),
                 user.getTelephone(),
+                validated,
                 user.getRole() != null ? user.getRole().name() : UserRole.UNKNOWN.name()
         );
     }

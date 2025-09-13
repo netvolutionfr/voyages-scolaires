@@ -22,4 +22,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Page<User> search(@Param("q") String q, Pageable pageable);
 
     Optional<User> findByEmail(String email);
+
+    Optional<User> findByEmailIgnoreCase(String email);
 }

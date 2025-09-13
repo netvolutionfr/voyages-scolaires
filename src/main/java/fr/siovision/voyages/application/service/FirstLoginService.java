@@ -1,54 +1,54 @@
 package fr.siovision.voyages.application.service;
 
+import fr.siovision.voyages.infrastructure.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
-import java.util.Optional;
+import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class FirstLoginService {
-    private static final Logger log = LoggerFactory.getLogger(FirstLoginService.class);
 
-    private final KeycloakService keycloak; // Ton service existant
+    private final UserRepository userRepo;
+    private final KeycloakService keycloakService;
 
-    public FirstLoginService(KeycloakService keycloak) {
-        this.keycloak = keycloak;
-    }
+    @Transactional
+    public void handleFirstLogin(String email, String reqId) throws NoSuchAlgorithmException {
+        Logger log = LoggerFactory.getLogger(FirstLoginService.class);
+        String reqIdShort = reqId != null && reqId.length() >= 8 ? reqId.substring(0, 8) : "no-reqid";
+        String emailHash = HexFormat.of().formatHex(
+                MessageDigest.getInstance("SHA-256").digest(email.toLowerCase().getBytes(StandardCharsets.UTF_8))
+        );
+        log.info("First login request [{}] for email hash {}", reqIdShort, emailHash);
 
-    public void handleFirstLogin(String rawEmail, String requestId) {
-        String email = normalize(rawEmail);
-
-        // log non-énumérant (email haché)
-        log.info("first-login request reqId={} emailHash={}", requestId, sha256(email.toLowerCase()));
-
-        try {
-            Optional<String> userId = keycloak.findUserByEmail(email).getId().describeConstable();
-            // Déclenche l’email d’actions (vérif email + choix mdp)
-            userId.ifPresent(s -> keycloak.sendExecuteActionsEmail(
-                    s,
-                    new String[]{"VERIFY_EMAIL", "UPDATE_PASSWORD"}
-            ));
-        } catch (Exception e) {
-            // Ne pas propager pour éviter l’énumération ; log technique uniquement
-            log.warn("first-login failed reqId={} reason={}", requestId, e.toString());
+        var user = userRepo.findByEmailIgnoreCase(email).orElse(null);
+        if (user == null) {
+            return; // réponse générique côté API
         }
-        // Toujours silence côté API (réponse générique envoyée par le controller)
-    }
 
-    private String normalize(String email) {
-        return email.trim();
-    }
-
-    private String sha256(String s) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            return HexFormat.of().formatHex(md.digest(s.getBytes(StandardCharsets.UTF_8)));
-        } catch (Exception e) {
-            return "hash-error";
+        // Crée dans KC si pas encore lié
+        if (user.getKeycloakId() == null) {
+            String kcId = keycloakService.createUserIfAbsent(
+                    user.getEmail(),
+                    user.getPrenom(),
+                    user.getNom(),
+                    user.getRole(),
+                    true
+            );
+            user.setKeycloakId(kcId);
+            userRepo.save(user);
         }
+
+        // Envoie l’email (toujours, ça réinvite au besoin)
+        keycloakService.sendExecuteActionsEmail(user.getKeycloakId(),
+                List.of("VERIFY_EMAIL", "UPDATE_PASSWORD").toArray(new String[0]));
     }
 }

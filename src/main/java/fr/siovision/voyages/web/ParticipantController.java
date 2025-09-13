@@ -39,15 +39,6 @@ public class ParticipantController {
         return ResponseEntity.ok(participants);
     }
 
-    @PostMapping("/api/participants")
-    @PreAuthorize("hasAnyRole('ADMIN', 'PARENT')")
-    public ResponseEntity<String> createParticipant(@RequestBody ParticipantRequest participantRequest) {
-        // Appeler le service pour créer un nouveau participant
-        log.info("Creating participant in the application for email {}", participantRequest.getEmail());
-        ParticipantProfileResponse savedParticipant = participantService.createParticipant(participantRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedParticipant.getId().toString());
-    }
-
     @GetMapping("/api/participants/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'PARENT')")
     public ResponseEntity<ParticipantProfileResponse> getParticipantById(@PathVariable UUID id) {
