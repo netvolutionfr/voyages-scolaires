@@ -24,7 +24,7 @@ public class VoyageController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
-    public ResponseEntity<String> createVoyage(@RequestBody VoyageDTO voyageRequest) {
+    public ResponseEntity<String> createVoyage(@RequestBody VoyageUpsertRequest voyageRequest) {
         // Appeler le service pour créer un nouveau voyage
         Voyage saved = voyageService.createVoyage(voyageRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved.getId().toString());
@@ -32,10 +32,10 @@ public class VoyageController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT', 'PARENT')")
-    public ResponseEntity<Page<VoyageDTO>> list(
+    public ResponseEntity<Page<VoyageDetailDTO>> list(
             @PageableDefault(size = 20, sort = "dateDepart", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<VoyageDTO> voyages = voyageService.list(pageable);
+        Page<VoyageDetailDTO> voyages = voyageService.list(pageable);
         return ResponseEntity.ok(voyages);
     }
 

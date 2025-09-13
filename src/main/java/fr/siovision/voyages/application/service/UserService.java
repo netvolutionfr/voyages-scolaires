@@ -114,6 +114,7 @@ public class UserService {
                 user.getEmail(),
                 user.getNom(),
                 user.getPrenom(),
+                user.getPrenom() + " " + user.getNom(),
                 user.getTelephone(),
                 validated,
                 user.getRole() != null ? user.getRole().name() : UserRole.UNKNOWN.name()

@@ -5,9 +5,7 @@ import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 
 @Entity
@@ -29,9 +27,13 @@ public class Voyage {
     private String nom;
     private String description;
     private String destination;
+
+    private Integer prixTotal; // en centimes d'euros
     private Integer participationDesFamilles; // en centimes d'euros
+
     @ManyToOne(fetch = FetchType.LAZY)
     private Pays pays;
+
     private LocalDate dateDepart;
     private LocalDate dateRetour;
     private Integer nombreMinParticipants;
@@ -39,11 +41,23 @@ public class Voyage {
     private LocalDate dateDebutInscription;
     private LocalDate dateFinInscription;
 
+    /** Photo de couverture (URL vers le store s3) */
+    private String coverPhotoUrl;
+
+    // ——— Relations
+    /** Élèves inscrits */
     @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
     private List<VoyageParticipant> participants;
 
     @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
     private List<Section> sections;
+
+    /** Secteurs (Cycle bac, Post-bac, …) éventuellement vide */
+    @ElementCollection(targetClass = Secteur.class, fetch = FetchType.EAGER)
+    @CollectionTable(name = "voyage_secteurs", joinColumns = @JoinColumn(name = "voyage_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "secteur")
+    private Set<Secteur> secteurs = new HashSet<>();
 
     @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
     private List<User> organisateurs;

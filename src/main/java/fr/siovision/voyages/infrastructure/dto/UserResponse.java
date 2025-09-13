@@ -14,6 +14,7 @@ public class UserResponse {
     private String email;
     private String nom;
     private String prenom;
+    private String fullName;
     private String telephone;
     private Boolean validated;
     private String role; // ADMIN, PARTICIPANT, ORGANISATEUR

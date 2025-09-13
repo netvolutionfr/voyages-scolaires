@@ -15,10 +15,11 @@ public class VoyageDetailDTO {
     private String description;
     private String destination;
     private Integer participationDesFamilles; // en centimes d'euros
+    private String coverPhotoUrl;
     private PaysDTO pays; // Détails du pays
     private DateRangeDTO datesVoyage; // Dates du voyage
-    private int nombreMinParticipants;
-    private int nombreMaxParticipants;
+    private Integer nombreMinParticipants;
+    private Integer nombreMaxParticipants;
     private DateRangeDTO datesInscription;
     // Liste des formalités associées au voyage
     private List<FormaliteVoyageDTO> formalites;

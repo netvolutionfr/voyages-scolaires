@@ -31,7 +31,7 @@ public class VoyageService {
 
     // Méthode pour créer un nouveau voyage
     @Transactional
-    public Voyage createVoyage(VoyageDTO voyageRequest) {
+    public Voyage createVoyage(VoyageUpsertRequest voyageRequest) {
         Objects.requireNonNull(voyageRequest, "voyageRequest ne peut pas être null");
         validateDatesPresent(voyageRequest);
 
@@ -49,9 +49,14 @@ public class VoyageService {
         voyage.setDateDebutInscription(voyageRequest.getDatesInscription().getFrom());
         voyage.setDateFinInscription(voyageRequest.getDatesInscription().getTo());
 
-        Pays pays = paysRepository.findById(voyageRequest.getPays().getId())
-                .orElseThrow(() -> new EntityNotFoundException("Pays non trouvé id=" + voyageRequest.getPays().getId()));
+        Pays pays = paysRepository.findById(voyageRequest.getPaysId())
+                .orElseThrow(() -> new EntityNotFoundException("Pays non trouvé id=" + voyageRequest.getPaysId()));
         voyage.setPays(pays);
+
+        voyage.setCoverPhotoUrl(voyageRequest.getCoverPhotoUrl());
+        voyage.setPrixTotal(voyageRequest.getPrixTotal());
+
+        // TODO : finaliser l'ensemble des champs (liste des organisateurs, etc.)
 
         // Clonage sécurisé des formalités
         cloneFormalitesFromTemplate(voyage, pays.getFormalitesPays());
@@ -60,7 +65,7 @@ public class VoyageService {
     }
 
     @Transactional(readOnly = true)
-    public Page<VoyageDTO> list(Pageable pageable) {
+    public Page<VoyageDetailDTO> list(Pageable pageable) {
         return voyageRepository.findAll(pageable).map(this::mapToVoyageDTO);
     }
 
@@ -157,6 +162,7 @@ public class VoyageService {
                 voyage.getDescription(),
                 voyage.getDestination(),
                 voyage.getParticipationDesFamilles(),
+                voyage.getCoverPhotoUrl(),
                 new PaysDTO(voyage.getPays().getId(), voyage.getPays().getNom()),
                 datesVoyage,
                 voyage.getNombreMinParticipants(),
@@ -168,7 +174,7 @@ public class VoyageService {
 
     // --- Méthodes utilitaires privées ---
 
-    private void validateDatesPresent(VoyageDTO dto) {
+    private void validateDatesPresent(VoyageUpsertRequest dto) {
         if (dto.getDatesVoyage() == null || dto.getDatesInscription() == null) {
             throw new IllegalArgumentException("Les plages de dates (voyage et inscription) sont requises.");
         }
@@ -225,7 +231,7 @@ public class VoyageService {
         );
     }
 
-    private VoyageDTO mapToVoyageDTO(Voyage voyage) {
+    private VoyageDetailDTO mapToVoyageDTO(Voyage voyage) {
         DateRangeDTO datesInscription = new DateRangeDTO(
                 voyage.getDateDebutInscription(),
                 voyage.getDateFinInscription()
@@ -235,17 +241,19 @@ public class VoyageService {
                 voyage.getDateRetour()
         );
         PaysDTO paysDTO = new PaysDTO(voyage.getPays().getId(), voyage.getPays().getNom());
-        return new VoyageDTO(
+        return new VoyageDetailDTO(
                 voyage.getId(),
                 voyage.getNom(),
                 voyage.getDescription(),
                 voyage.getDestination(),
                 voyage.getParticipationDesFamilles(),
+                voyage.getCoverPhotoUrl(),
                 paysDTO,
                 datesVoyage,
                 voyage.getNombreMinParticipants(),
                 voyage.getNombreMaxParticipants(),
-                datesInscription
+                datesInscription,
+                List.of() // Formalités non incluses dans la liste paginée
         );
     }
 }
