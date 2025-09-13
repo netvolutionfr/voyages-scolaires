@@ -1,13 +1,11 @@
 package fr.siovision.voyages.application.service;
 
-import fr.siovision.voyages.domain.model.ParentChild;
-import fr.siovision.voyages.domain.model.Participant;
-import fr.siovision.voyages.domain.model.User;
-import fr.siovision.voyages.domain.model.UserRole;
+import fr.siovision.voyages.domain.model.*;
 import fr.siovision.voyages.infrastructure.dto.ImportResult;
 import fr.siovision.voyages.infrastructure.dto.ImportRow;
 import fr.siovision.voyages.infrastructure.repository.ParentChildRepository;
 import fr.siovision.voyages.infrastructure.repository.ParticipantRepository;
+import fr.siovision.voyages.infrastructure.repository.SectionRepository;
 import fr.siovision.voyages.infrastructure.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +27,7 @@ public class ImportService {
     private final UserRepository userRepo;
     private final ParticipantRepository participantRepo;
     private final ParentChildRepository parentChildRepo;
+    private final SectionRepository sectionRepo;
 
     @Transactional
     public ImportResult importCsv(InputStream csvStream) {
@@ -39,13 +38,13 @@ public class ImportService {
         for (int i = 0; i < rows.size(); i++) {
             ImportRow row = rows.get(i);
             try {
-                switch (row.role().toLowerCase()) {
+                switch (row.getRole().toLowerCase()) {
                     case "student" -> handleStudent(row);
                     case "teacher" -> handleTeacher(row);
                     case "admin" -> handleAdmin(row);
                     default -> {
                         result.incSkipped();
-                        result.addError(i + 1, "Rôle inconnu: " + row.role());
+                        result.addError(i + 1, "Rôle inconnu: " + row.getRole());
                         continue;
                     }
                 }
@@ -73,6 +72,9 @@ public class ImportService {
                         rec.get("prenom"),
                         rec.get("email"),
                         rec.get("telephone"),
+                        rec.get("sexe"),
+                        rec.get("section"),
+                        rec.get("dateNaissance"),
                         rec.get("parent1_nom"),
                         rec.get("parent1_prenom"),
                         rec.get("parent1_email"),
@@ -91,22 +93,26 @@ public class ImportService {
 
     @Transactional
     void handleStudent(ImportRow row) {
-        log.info("Handling student import for email: {}", row.email());
+        log.info("Handling student import for email: {}", row.getEmail());
         // 1) valider
-        String studentEmail = norm(row.email());
+        String studentEmail = norm(row.getEmail());
         requireNonBlank(studentEmail, "Email étudiant manquant");
-        requireNonBlank(row.nom(), "Nom étudiant manquant");
-        requireNonBlank(row.prenom(), "Prénom étudiant manquant");
+        requireNonBlank(row.getNom(), "Nom étudiant manquant");
+        requireNonBlank(row.getPrenom(), "Prénom étudiant manquant");
+        // si sexe n'est pas M ou F, le remplacer par "N"
+        if (row.getSexe() == null || !(row.getSexe().equalsIgnoreCase("M") || row.getSexe().equalsIgnoreCase("F"))) {
+            row.setSexe("N");
+        }
 
         // 2) upsert User (STUDENT)
         User studentUser = userRepo.findByEmail(studentEmail)
-                .map(u -> updateNamesIfChanged(u, row.nom(), row.prenom(), row.telephone(), UserRole.STUDENT))
+                .map(u -> updateNamesIfChanged(u, row.getNom(), row.getPrenom(), row.getTelephone(), UserRole.STUDENT))
                 .orElseGet(() -> {
                     User u = new User();
                     u.setEmail(studentEmail);
-                    u.setNom(row.nom().trim());
-                    u.setPrenom(row.prenom().trim());
-                    u.setTelephone(emptyToNull(row.telephone()));
+                    u.setNom(row.getNom().trim());
+                    u.setPrenom(row.getPrenom().trim());
+                    u.setTelephone(emptyToNull(row.getTelephone()));
                     u.setRole(UserRole.STUDENT);
                     return userRepo.save(u);
                 });
@@ -115,25 +121,40 @@ public class ImportService {
         Participant participant = participantRepo.findByStudentAccount_Email(studentEmail)
                 .orElseGet(() -> {
                     Participant p = new Participant();
-                    p.setNom(row.nom().trim());
-                    p.setPrenom(row.prenom().trim());
+                    p.setNom(row.getNom().trim());
+                    p.setPrenom(row.getPrenom().trim());
+                    p.setSexe(row.getSexe());
                     p.setEmail(studentEmail);
-                    p.setTelephone(emptyToNull(row.telephone()));
-                    // TODO section: à ajouter dans le CSV et gérer ici
-                    // p.setSection(sectionService.resolve(...));
+                    p.setTelephone(emptyToNull(row.getTelephone()));
+                    Section section = sectionRepo.findByLibelle(row.getSection().trim())
+                            .orElseGet(() -> {
+                                Section s = new Section();
+                                s.setLibelle(row.getSection().trim());
+                                return sectionRepo.save(s);
+                            });
+
+                    p.setSection(section);
+                    // Parser dateNaissance
+                    if (row.getDateNaissance() != null && !row.getDateNaissance().isBlank()) {
+                        try {
+                            p.setDateNaissance(java.time.LocalDate.parse(row.getDateNaissance().trim()));
+                        } catch (Exception e) {
+                            throw new IllegalArgumentException("Date de naissance invalide pour " + studentEmail + ": " + row.getDateNaissance());
+                        }
+                    }
                     p.setStudentAccount(studentUser); // obligatoire par conception
                     return participantRepo.save(p);
                 });
 
         // Si déjà existant, mettre à jour champs utiles
-        participant.setNom(row.nom().trim());
-        participant.setPrenom(row.prenom().trim());
-        participant.setTelephone(emptyToNull(row.telephone()));
+        participant.setNom(row.getNom().trim());
+        participant.setPrenom(row.getPrenom().trim());
+        participant.setTelephone(emptyToNull(row.getTelephone()));
         participantRepo.save(participant);
 
         // 4) parents (facultatifs) → upsert User(PARENT) + liens ParentChild
-        User parent1 = upsertParent(row.parent1Email(), row.parent1Nom(), row.parent1Prenom(), row.parent1Tel());
-        User parent2 = upsertParent(row.parent2Email(), row.parent2Nom(), row.parent2Prenom(), row.parent2Tel());
+        User parent1 = upsertParent(row.getParent1Email(), row.getParent1Nom(), row.getParent1Prenom(), row.getParent1Tel());
+        User parent2 = upsertParent(row.getParent2Email(), row.getParent2Nom(), row.getParent2Prenom(), row.getParent2Tel());
 
         // 5) liens ParentChild (uniques)
         if (parent1 != null) linkParentToChildOnce(parent1, participant); // ou MERE/PERE si tu sais inférer
@@ -147,13 +168,13 @@ public class ImportService {
 
     @Transactional
     void handleTeacher(ImportRow row) {
-        log.info("Handling teacher import for email: {}", row.email());
-        User user = userRepo.findByEmail(row.email()).orElseGet(() -> {
+        log.info("Handling teacher import for email: {}", row.getEmail());
+        User user = userRepo.findByEmail(row.getEmail()).orElseGet(() -> {
             User newuser = new User();
-            newuser.setEmail(row.email());
-            newuser.setPrenom(row.prenom());
-            newuser.setNom(row.nom());
-            newuser.setTelephone(row.telephone());
+            newuser.setEmail(row.getEmail());
+            newuser.setPrenom(row.getPrenom());
+            newuser.setNom(row.getNom());
+            newuser.setTelephone(row.getTelephone());
             newuser.setRole(UserRole.TEACHER);
             log.info("Creating new teacher user: {}", newuser);
             return userRepo.save(newuser);
@@ -162,7 +183,7 @@ public class ImportService {
 
     @Transactional
     void handleAdmin(ImportRow row) {
-        log.info("Handling admin import for email: {}", row.email());
+        log.info("Handling admin import for email: {}", row.getEmail());
         // TODO: créer User admin + KC
     }
 

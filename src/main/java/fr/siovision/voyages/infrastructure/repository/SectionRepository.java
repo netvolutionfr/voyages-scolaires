@@ -7,6 +7,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
+
 
 public interface SectionRepository extends JpaRepository<Section, Long> {
     @Query("""
@@ -16,4 +18,6 @@ public interface SectionRepository extends JpaRepository<Section, Long> {
                    OR lower(s.libelle) LIKE lower(concat('%', :q, '%'))
             """)
     Page<Section> search(@Param("q") String q, Pageable pageable);
+
+    Optional<Section> findByLibelle(String libelle);
 }
