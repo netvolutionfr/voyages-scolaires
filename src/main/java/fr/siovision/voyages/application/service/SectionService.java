@@ -29,9 +29,10 @@ public class SectionService {
 
     public SectionDTO createSection(SectionDTO sectionDTO) {
         Objects.requireNonNull(sectionDTO, "sectionDTO ne peut pas être null");
+
         Section section = toEntity(sectionDTO);
         Section saved = sectionRepository.save(section);
-        log.info("Section créée id={}", saved.getId());
+
         return toDto(saved);
     }
 
@@ -42,6 +43,7 @@ public class SectionService {
 
         Section updated = sectionRepository.findById(id)
                 .map(existing -> {
+                    existing.setPublicId(sectionDTO.getPublicId());
                     existing.setLibelle(sectionDTO.getLibelle());
                     existing.setDescription(sectionDTO.getDescription());
                     return sectionRepository.save(existing);
@@ -70,11 +72,18 @@ public class SectionService {
     }
 
     private SectionDTO toDto(Section section) {
-        return new SectionDTO(section.getId(), section.getLibelle(), section.getDescription());
+        return new SectionDTO(
+                section.getId(),
+                section.getPublicId(),
+                section.getLibelle(),
+                section.getDescription()
+        );
     }
 
     private Section toEntity(SectionDTO dto) {
         Section section = new Section();
+
+        section.setPublicId(dto.getPublicId());
         section.setLibelle(dto.getLibelle());
         section.setDescription(dto.getDescription());
         return section;

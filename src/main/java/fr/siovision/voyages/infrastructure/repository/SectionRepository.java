@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
+import java.util.UUID;
 
 
 public interface SectionRepository extends JpaRepository<Section, Long> {
@@ -20,4 +21,6 @@ public interface SectionRepository extends JpaRepository<Section, Long> {
     Page<Section> search(@Param("q") String q, Pageable pageable);
 
     Optional<Section> findByLibelle(String libelle);
+
+    Optional<Section> findByPublicId(UUID secId);
 }

@@ -9,9 +9,10 @@ import java.util.UUID;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SectionDTO {
-    private Long id;
+public class OrganisateurDTO {
     private UUID publicId;
-    private String libelle;
-    private String description;
+    private String nom;
+    private String prenom;
+    private String email;
+    private String telephone;
 }

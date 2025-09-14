@@ -98,6 +98,13 @@ public class UserService {
     public Page<UserResponse> getAllUsers(Jwt jwt, String q, Pageable pageable) {
         // Vérification d'autorisation minimale: ADMIN requis
         if (extractRole(jwt) != UserRole.ADMIN) {
+            if (extractRole(jwt) == UserRole.TEACHER) {
+                // Récupérer uniquement les utilisateurs de type TEACHER
+                Page<User> teachers = userRepository.findByRole(UserRole.TEACHER, pageable);
+                return teachers.map(this::toResponse);
+            } else {
+                log.warn("Tentative d'accès à la liste des utilisateurs par un utilisateur sans rôle ADMIN (Keycloak ID: {}, rôle: {})", jwt.getSubject(), extractRole(jwt));
+            }
             throw new AccessDeniedException("Accès refusé: rôle ADMIN requis pour lister les utilisateurs.");
         }
 

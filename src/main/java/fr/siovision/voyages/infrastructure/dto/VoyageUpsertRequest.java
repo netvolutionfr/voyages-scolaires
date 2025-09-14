@@ -8,10 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Data
 @NoArgsConstructor
@@ -54,10 +51,10 @@ public class VoyageUpsertRequest {
 
     /** Organisateurs (prof/admin) */
     @NotNull
-    private List<Long> organisateurIds = new ArrayList<>();
+    private List<UUID> organisateurIds = new ArrayList<>();
 
     /** Sections concernées (peut être vide) */
-    private List<Long> sectionIds = new ArrayList<>();
+    private List<UUID> sectionIds = new ArrayList<>();
 
     /** Secteurs (peut être vide) */
     private Set<Secteur> secteurs = new HashSet<>();

@@ -14,6 +14,7 @@ public class VoyageDetailDTO {
     private String nom;
     private String description;
     private String destination;
+    private Integer prixTotal; // en centimes d'euros
     private Integer participationDesFamilles; // en centimes d'euros
     private String coverPhotoUrl;
     private PaysDTO pays; // Détails du pays
@@ -21,6 +22,8 @@ public class VoyageDetailDTO {
     private Integer nombreMinParticipants;
     private Integer nombreMaxParticipants;
     private DateRangeDTO datesInscription;
-    // Liste des formalités associées au voyage
     private List<FormaliteVoyageDTO> formalites;
+    private List<OrganisateurDTO> organisateurs;
+    private List<SectionDTO> sections;
+    private String updatedAt; // Date de la dernière mise à jour
 }

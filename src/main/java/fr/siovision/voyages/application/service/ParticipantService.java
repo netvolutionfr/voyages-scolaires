@@ -36,7 +36,12 @@ public class ParticipantService {
 
     public Page<SectionDTO> list(String q, Pageable pageable) {
         Page<Section> sections = sectionRepository.search(q, pageable);
-        return sections.map(section -> new SectionDTO(section.getId(), section.getLibelle(), section.getDescription()));
+        return sections.map(section -> new SectionDTO(
+                section.getId(),
+                section.getPublicId(),
+                section.getLibelle(),
+                section.getDescription()
+        ));
     }
 
     public Page<ParticipantProfileResponse> getAllParticipants(String q, Pageable pageable) {

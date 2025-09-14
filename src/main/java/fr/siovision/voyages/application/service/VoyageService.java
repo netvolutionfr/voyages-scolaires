@@ -3,10 +3,7 @@ package fr.siovision.voyages.application.service;
 
 import fr.siovision.voyages.domain.model.*;
 import fr.siovision.voyages.infrastructure.dto.*;
-import fr.siovision.voyages.infrastructure.repository.ParticipantRepository;
-import fr.siovision.voyages.infrastructure.repository.PaysRepository;
-import fr.siovision.voyages.infrastructure.repository.VoyageParticipantRepository;
-import fr.siovision.voyages.infrastructure.repository.VoyageRepository;
+import fr.siovision.voyages.infrastructure.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,8 +12,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Slf4j
@@ -25,9 +20,9 @@ import java.util.*;
 public class VoyageService {
 
     private final VoyageRepository voyageRepository;
-    private final ParticipantRepository participantRepository;
-    private final VoyageParticipantRepository voyageParticipantRepository;
     private final PaysRepository paysRepository;
+    private final UserRepository userRepository;
+    private final SectionRepository sectionRepository;
 
     // Méthode pour créer un nouveau voyage
     @Transactional
@@ -35,10 +30,15 @@ public class VoyageService {
         Objects.requireNonNull(voyageRequest, "voyageRequest ne peut pas être null");
         validateDatesPresent(voyageRequest);
 
+        if (voyageRequest.getId() != null) {
+            throw new IllegalArgumentException("L'ID doit être null pour la création d'un nouveau voyage.");
+        }
+
         Voyage voyage = new Voyage();
         voyage.setNom(voyageRequest.getNom());
         voyage.setDescription(voyageRequest.getDescription());
         voyage.setDestination(voyageRequest.getDestination());
+        voyage.setPrixTotal(voyageRequest.getPrixTotal());
         voyage.setParticipationDesFamilles(voyageRequest.getParticipationDesFamilles());
         voyage.setNombreMaxParticipants(voyageRequest.getNombreMaxParticipants());
         voyage.setNombreMinParticipants(voyageRequest.getNombreMinParticipants());
@@ -53,10 +53,29 @@ public class VoyageService {
                 .orElseThrow(() -> new EntityNotFoundException("Pays non trouvé id=" + voyageRequest.getPaysId()));
         voyage.setPays(pays);
 
+        // Récupérer les organisateurs
+        List<UUID> organisateurIds = voyageRequest.getOrganisateurIds();
+        voyage.setOrganisateurs(new ArrayList<>());
+        if (organisateurIds != null) {
+            for (UUID orgId : organisateurIds) {
+                User organisateur = userRepository.findByPublicId(orgId)
+                        .orElseThrow(() -> new EntityNotFoundException("Organisateur non trouvé idPublic=" + orgId));
+                voyage.getOrganisateurs().add(organisateur);
+            }
+        }
+
+        List<UUID> sectionIds = voyageRequest.getSectionIds();
+        voyage.setSections(new ArrayList<>());
+        if (sectionIds != null) {
+            for (UUID secId : sectionIds) {
+                Section section = sectionRepository.findByPublicId(secId)
+                        .orElseThrow(() -> new EntityNotFoundException("Section non trouvée idPublic=" + secId));
+                voyage.getSections().add(section);
+            }
+        }
+
         voyage.setCoverPhotoUrl(voyageRequest.getCoverPhotoUrl());
         voyage.setPrixTotal(voyageRequest.getPrixTotal());
-
-        // TODO : finaliser l'ensemble des champs (liste des organisateurs, etc.)
 
         // Clonage sécurisé des formalités
         cloneFormalitesFromTemplate(voyage, pays.getFormalitesPays());
@@ -64,77 +83,67 @@ public class VoyageService {
         return voyageRepository.save(voyage);
     }
 
+    @Transactional
+    public Voyage updateVoyage(Long id, VoyageUpsertRequest voyageRequest) {
+        Objects.requireNonNull(id, "id ne peut pas être null");
+        Objects.requireNonNull(voyageRequest, "voyageRequest ne peut pas être null");
+        validateDatesPresent(voyageRequest);
+
+        Voyage updated = voyageRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Voyage non trouvé id=" + id));
+
+        updated.setNom(voyageRequest.getNom());
+        updated.setDescription(voyageRequest.getDescription());
+        updated.setDestination(voyageRequest.getDestination());
+        updated.setPrixTotal(voyageRequest.getPrixTotal());
+        updated.setParticipationDesFamilles(voyageRequest.getParticipationDesFamilles());
+        updated.setNombreMaxParticipants(voyageRequest.getNombreMaxParticipants());
+        updated.setNombreMinParticipants(voyageRequest.getNombreMinParticipants());
+
+        // Parsing sécurisée des dates
+        updated.setDateDepart(voyageRequest.getDatesVoyage().getFrom());
+        updated.setDateRetour(voyageRequest.getDatesVoyage().getTo());
+        updated.setDateDebutInscription(voyageRequest.getDatesInscription().getFrom());
+        updated.setDateFinInscription(voyageRequest.getDatesInscription().getTo());
+
+        Pays pays = paysRepository.findById(voyageRequest.getPaysId())
+                .orElseThrow(() -> new EntityNotFoundException("Pays non trouvé id=" + voyageRequest.getPaysId()));
+        updated.setPays(pays);
+
+        // Récupérer les organisateurs
+        List<UUID> organisateurIds = voyageRequest.getOrganisateurIds();
+        updated.setOrganisateurs(new ArrayList<>());
+        if (organisateurIds != null) {
+            for (UUID orgId : organisateurIds) {
+                User organisateur = userRepository.findByPublicId(orgId)
+                        .orElseThrow(() -> new EntityNotFoundException("Organisateur non trouvé idPublic=" + orgId));
+                updated.getOrganisateurs().add(organisateur);
+            }
+        }
+
+        List<UUID> sectionIds = voyageRequest.getSectionIds();
+        updated.setSections(new ArrayList<>());
+        if (sectionIds != null) {
+            for (UUID secId : sectionIds) {
+                Section section = sectionRepository.findByPublicId(secId)
+                        .orElseThrow(() -> new EntityNotFoundException("Section non trouvée idPublic=" + secId));
+                updated.getSections().add(section);
+            }
+        }
+
+        updated.setCoverPhotoUrl(voyageRequest.getCoverPhotoUrl());
+        updated.setPrixTotal(voyageRequest.getPrixTotal());
+
+        // Note : les formalités existantes ne sont pas modifiées ici. La gestion des formalités
+        // ajoutées manuellement ou via le template doit être faite via des endpoints dédiés.
+
+        log.info("Voyage mis à jour id={}", updated.getId());
+        return voyageRepository.save(updated);
+    }
+
     @Transactional(readOnly = true)
     public Page<VoyageDetailDTO> list(Pageable pageable) {
         return voyageRepository.findAll(pageable).map(this::mapToVoyageDTO);
-    }
-
-    public void addParticipantToVoyage(Long voyageId, VoyageParticipantRequest request) {
-        Voyage voyage = voyageRepository.findById(voyageId)
-                .orElseThrow(() -> new EntityNotFoundException("Voyage non trouvé id=" + voyageId));
-
-        Participant participant = participantRepository.findByPublicId(request.getParticipantId())
-                .orElseThrow(() -> new EntityNotFoundException("Participant non trouvé idPublic=" + request.getParticipantId()));
-
-        VoyageParticipant vp = new VoyageParticipant();
-        vp.setVoyage(voyage);
-        vp.setParticipant(participant);
-        vp.setAccompagnateur(Boolean.TRUE.equals(request.getAccompagnateur()));
-        vp.setOrganisateur(Boolean.TRUE.equals(request.getOrganisateur()));
-        vp.setDateInscription(LocalDateTime.now());
-
-        voyageParticipantRepository.save(vp);
-    }
-
-    @Transactional(readOnly = true)
-    public List<VoyagesOuvertsResponse> getVoyagesOuverts() {
-        return voyageRepository.findVoyagesOuverts().stream()
-                .map(v -> new VoyagesOuvertsResponse(
-                        v.getId(),
-                        v.getNom(),
-                        v.getDescription(),
-                        v.getDestination(),
-                        v.getDateDepart().toString(),
-                        v.getDateRetour().toString(),
-                        v.getNombreMinParticipants(),
-                        v.getNombreMaxParticipants(),
-                        v.getDateDebutInscription().toString(),
-                        v.getDateFinInscription().toString()
-                ))
-                .toList();
-    }
-
-    @Transactional
-    public void inscrireParticipant(Long voyageId, String email, VoyageInscriptionRequest request) {
-        if (!Boolean.TRUE.equals(request.getJeMEngage())) {
-            throw new IllegalArgumentException("Engagement requis pour s'inscrire.");
-        }
-
-        Voyage voyage = voyageRepository.findById(voyageId)
-                .orElseThrow(() -> new EntityNotFoundException("Voyage introuvable id=" + voyageId));
-
-        LocalDate today = LocalDate.now();
-        if (today.isBefore(voyage.getDateDebutInscription()) || today.isAfter(voyage.getDateFinInscription())) {
-            throw new IllegalStateException("Les inscriptions pour ce voyage ne sont pas ouvertes.");
-        }
-
-        Participant participant = participantRepository.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("Participant introuvable email=" + email));
-
-        boolean dejaInscrit = voyageParticipantRepository.existsByVoyageAndParticipant(voyage, participant);
-        if (dejaInscrit) {
-            throw new IllegalStateException("Déjà inscrit à ce voyage.");
-        }
-
-        VoyageParticipant vp = new VoyageParticipant();
-        vp.setVoyage(voyage);
-        vp.setParticipant(participant);
-        vp.setStatutInscription(StatutInscription.EN_ATTENTE);
-        vp.setMessageMotivation(request.getMessageMotivation());
-        vp.setDateInscription(LocalDateTime.now());
-        vp.setDateEngagement(LocalDateTime.now());
-
-        voyageParticipantRepository.save(vp);
     }
 
     @Transactional(readOnly = true)
@@ -144,6 +153,24 @@ public class VoyageService {
 
         List<FormaliteVoyageDTO> formalites = voyage.getFormalites().stream()
                 .map(this::mapFormaliteToDTO)
+                .toList();
+
+        List<OrganisateurDTO> organisateurs = voyage.getOrganisateurs().stream()
+                .map(org -> new OrganisateurDTO(
+                        org.getPublicId(),
+                        org.getNom(),
+                        org.getPrenom(),
+                        org.getEmail(),
+                        org.getTelephone()
+                ))
+                .toList();
+        List<SectionDTO> sections = voyage.getSections().stream()
+                .map(sec -> new SectionDTO(
+                        sec.getId(),
+                        sec.getPublicId(),
+                        sec.getLibelle(),
+                        sec.getDescription()
+                ))
                 .toList();
 
         DateRangeDTO datesInscription = new DateRangeDTO(
@@ -161,6 +188,7 @@ public class VoyageService {
                 voyage.getNom(),
                 voyage.getDescription(),
                 voyage.getDestination(),
+                voyage.getPrixTotal(),
                 voyage.getParticipationDesFamilles(),
                 voyage.getCoverPhotoUrl(),
                 new PaysDTO(voyage.getPays().getId(), voyage.getPays().getNom()),
@@ -168,7 +196,10 @@ public class VoyageService {
                 voyage.getNombreMinParticipants(),
                 voyage.getNombreMaxParticipants(),
                 datesInscription,
-                formalites
+                formalites,
+                organisateurs,
+                sections,
+                voyage.getUpdatedAt().toString()
         );
     }
 
@@ -240,12 +271,31 @@ public class VoyageService {
                 voyage.getDateDepart(),
                 voyage.getDateRetour()
         );
+        List<OrganisateurDTO> organisateurs = voyage.getOrganisateurs().stream()
+                .map(org -> new OrganisateurDTO(
+                        org.getPublicId(),
+                        org.getNom(),
+                        org.getPrenom(),
+                        org.getEmail(),
+                        org.getTelephone()
+                ))
+                .toList();
+        List<SectionDTO> sections = voyage.getSections().stream()
+                .map(sec -> new SectionDTO(
+                        sec.getId(),
+                        sec.getPublicId(),
+                        sec.getLibelle(),
+                        sec.getDescription()
+                ))
+                .toList();
+
         PaysDTO paysDTO = new PaysDTO(voyage.getPays().getId(), voyage.getPays().getNom());
         return new VoyageDetailDTO(
                 voyage.getId(),
                 voyage.getNom(),
                 voyage.getDescription(),
                 voyage.getDestination(),
+                voyage.getPrixTotal(),
                 voyage.getParticipationDesFamilles(),
                 voyage.getCoverPhotoUrl(),
                 paysDTO,
@@ -253,7 +303,10 @@ public class VoyageService {
                 voyage.getNombreMinParticipants(),
                 voyage.getNombreMaxParticipants(),
                 datesInscription,
-                List.of() // Formalités non incluses dans la liste paginée
+                List.of(), // Formalités non incluses dans la liste paginée
+                organisateurs,
+                sections,
+                voyage.getUpdatedAt().toString()
         );
     }
 }

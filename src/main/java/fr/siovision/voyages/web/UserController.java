@@ -36,7 +36,7 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
     @GetMapping("/users")
     public ResponseEntity<Page<UserResponse>> getUsers(
             @AuthenticationPrincipal Jwt jwt,

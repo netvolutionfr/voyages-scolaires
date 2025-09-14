@@ -1,6 +1,7 @@
 package fr.siovision.voyages.infrastructure.repository;
 
 import fr.siovision.voyages.domain.model.User;
+import fr.siovision.voyages.domain.model.UserRole;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,4 +25,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByEmail(String email);
 
     Optional<User> findByEmailIgnoreCase(String email);
+
+    Page<User> findByRole(UserRole userRole, Pageable pageable);
+
+    Optional<User> findByPublicId(UUID orgId);
 }
