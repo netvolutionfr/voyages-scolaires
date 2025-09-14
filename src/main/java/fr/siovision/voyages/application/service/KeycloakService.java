@@ -1,9 +1,7 @@
 package fr.siovision.voyages.application.service;
 
 import fr.siovision.voyages.domain.model.UserRole;
-import fr.siovision.voyages.infrastructure.dto.ParticipantRequest;
 import jakarta.annotation.PostConstruct;
-import jakarta.ws.rs.core.Response;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
@@ -15,7 +13,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -35,7 +32,7 @@ public class KeycloakService {
 
     private Keycloak keycloak;
 
-    @Value("${APP.FRONT_URL:http://localhost:5173}")
+    @Value("${app.front.url}")
     private String frontUrl;
 
     @PostConstruct
