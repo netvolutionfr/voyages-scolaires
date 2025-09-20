@@ -22,8 +22,11 @@ public class VoyageDetailDTO {
     private Integer nombreMinParticipants;
     private Integer nombreMaxParticipants;
     private DateRangeDTO datesInscription;
+    private Boolean sondage; // true si le voyage est en mode "sondage" (dates non fixées)
     private List<FormaliteVoyageDTO> formalites;
     private List<OrganisateurDTO> organisateurs;
+    private Long interestedCount; // Nombre de personnes intéressées
     private List<SectionDTO> sections;
     private String updatedAt; // Date de la dernière mise à jour
+    private Boolean interestedByCurrentUser; // Si l'utilisateur courant est intéressé
 }

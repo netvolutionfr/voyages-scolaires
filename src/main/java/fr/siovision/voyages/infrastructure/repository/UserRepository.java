@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -29,4 +30,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Page<User> findByRole(UserRole userRole, Pageable pageable);
 
     Optional<User> findByPublicId(UUID orgId);
+
+    Page<User> findByRoleIn(List<UserRole> roles, Pageable pageable);
 }

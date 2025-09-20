@@ -41,6 +41,8 @@ public class VoyageUpsertRequest {
     @NotNull
     private DateRangeDTO datesVoyage;
 
+    private boolean sondage; // true si le voyage est en mode "sondage" (dates non fixées)
+
     @PositiveOrZero
     private Integer nombreMinParticipants;
     @PositiveOrZero

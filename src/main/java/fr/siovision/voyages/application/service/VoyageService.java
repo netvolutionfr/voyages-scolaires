@@ -23,6 +23,8 @@ public class VoyageService {
     private final PaysRepository paysRepository;
     private final UserRepository userRepository;
     private final SectionRepository sectionRepository;
+    private final CurrentUserService currentUserService;
+    private final VoyagePreferenceService voyagePreferenceService;
 
     // Méthode pour créer un nouveau voyage
     @Transactional
@@ -48,6 +50,9 @@ public class VoyageService {
         voyage.setDateRetour(voyageRequest.getDatesVoyage().getTo());
         voyage.setDateDebutInscription(voyageRequest.getDatesInscription().getFrom());
         voyage.setDateFinInscription(voyageRequest.getDatesInscription().getTo());
+
+        // Mode sondage
+        voyage.setSondage(voyageRequest.isSondage());
 
         Pays pays = paysRepository.findById(voyageRequest.getPaysId())
                 .orElseThrow(() -> new EntityNotFoundException("Pays non trouvé id=" + voyageRequest.getPaysId()));
@@ -105,6 +110,9 @@ public class VoyageService {
         updated.setDateRetour(voyageRequest.getDatesVoyage().getTo());
         updated.setDateDebutInscription(voyageRequest.getDatesInscription().getFrom());
         updated.setDateFinInscription(voyageRequest.getDatesInscription().getTo());
+
+        // Mode sondage
+        updated.setSondage(voyageRequest.isSondage());
 
         Pays pays = paysRepository.findById(voyageRequest.getPaysId())
                 .orElseThrow(() -> new EntityNotFoundException("Pays non trouvé id=" + voyageRequest.getPaysId()));
@@ -183,6 +191,11 @@ public class VoyageService {
                 voyage.getDateRetour()
         );
 
+        Long interestedCount = voyagePreferenceService.countInterestedUsers(voyage.getId());
+
+        User currentUser = currentUserService.getCurrentUser();
+        boolean interested = voyagePreferenceService.isInterested(currentUser, voyage.getId());
+
         return new VoyageDetailDTO(
                 voyage.getId(),
                 voyage.getNom(),
@@ -196,10 +209,13 @@ public class VoyageService {
                 voyage.getNombreMinParticipants(),
                 voyage.getNombreMaxParticipants(),
                 datesInscription,
+                voyage.getSondage() != null && voyage.getSondage(),
                 formalites,
                 organisateurs,
+                interestedCount,
                 sections,
-                voyage.getUpdatedAt().toString()
+                voyage.getUpdatedAt().toString(),
+                interested
         );
     }
 
@@ -289,6 +305,11 @@ public class VoyageService {
                 ))
                 .toList();
 
+        Long interestedCount = voyagePreferenceService.countInterestedUsers(voyage.getId());
+
+        User currentUser = currentUserService.getCurrentUser();
+        boolean interested = voyagePreferenceService.isInterested(currentUser, voyage.getId());
+
         PaysDTO paysDTO = new PaysDTO(voyage.getPays().getId(), voyage.getPays().getNom());
         return new VoyageDetailDTO(
                 voyage.getId(),
@@ -303,10 +324,13 @@ public class VoyageService {
                 voyage.getNombreMinParticipants(),
                 voyage.getNombreMaxParticipants(),
                 datesInscription,
+                voyage.getSondage(),
                 List.of(), // Formalités non incluses dans la liste paginée
                 organisateurs,
+                interestedCount,
                 sections,
-                voyage.getUpdatedAt().toString()
+                voyage.getUpdatedAt().toString(),
+                interested
         );
     }
 }

@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -95,7 +96,8 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public Page<UserResponse> getAllUsers(Jwt jwt, String q, Pageable pageable) {
+    public Page<UserResponse> getAllUsers(Jwt jwt, List<UserRole> roles, Pageable pageable) {
+        log.info("Listing users with filter '{}', page: {}, size: {}", roles, pageable.getPageNumber(), pageable.getPageSize());
         // Vérification d'autorisation minimale: ADMIN requis
         if (extractRole(jwt) != UserRole.ADMIN) {
             if (extractRole(jwt) == UserRole.TEACHER) {
@@ -108,7 +110,10 @@ public class UserService {
             throw new AccessDeniedException("Accès refusé: rôle ADMIN requis pour lister les utilisateurs.");
         }
 
-        Page<User> users = userRepository.search(q, pageable);
+        if (roles == null || roles.isEmpty()) {
+            roles = List.of(UserRole.values());
+        }
+        Page<User> users = userRepository.findByRoleIn(roles, pageable);
         return users
                 .map(this::toResponse);
     }

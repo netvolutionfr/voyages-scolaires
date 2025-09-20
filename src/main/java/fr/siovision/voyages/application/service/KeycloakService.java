@@ -90,6 +90,7 @@ public class KeycloakService {
      */
     public void sendExecuteActionsEmail(String s, String[] actions) {
         int lifespan = 3600; // secondes de validité du lien (1h ici)
+        log.info("Envoi email d'actions Keycloak à l'utilisateur {}, url de retour {}", s, frontUrl);
         String redirectUri = frontUrl + "/apres-premier-acces";
 
         keycloak.realm(realm)

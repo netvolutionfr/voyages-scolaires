@@ -1,10 +1,10 @@
 package fr.siovision.voyages.web;
 
 import fr.siovision.voyages.application.service.UserService;
-import fr.siovision.voyages.domain.model.User;
-import fr.siovision.voyages.infrastructure.dto.ParticipantProfileResponse;
+import fr.siovision.voyages.domain.model.UserRole;
 import fr.siovision.voyages.infrastructure.dto.UserResponse;
 import fr.siovision.voyages.infrastructure.dto.UserTelephoneRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api")
 public class UserController {
@@ -40,10 +41,10 @@ public class UserController {
     @GetMapping("/users")
     public ResponseEntity<Page<UserResponse>> getUsers(
             @AuthenticationPrincipal Jwt jwt,
-            @RequestParam(required = false) String q,
+            @RequestParam(value = "role.in", required = false) List<UserRole> roles,
             @PageableDefault(size = 20, sort = "nom", direction = Sort.Direction.ASC) Pageable pageable
     ) {
-        Page<UserResponse> users = userService.getAllUsers(jwt, q, pageable);
+        Page<UserResponse> users = userService.getAllUsers(jwt, roles, pageable);
         return ResponseEntity.ok(users);
     }
 }

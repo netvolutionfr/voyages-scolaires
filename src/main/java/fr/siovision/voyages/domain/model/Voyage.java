@@ -2,6 +2,7 @@ package fr.siovision.voyages.domain.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -14,6 +15,7 @@ import java.util.*;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
+@Slf4j
 public class Voyage {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cust_seq")
@@ -40,7 +42,7 @@ public class Voyage {
     private Integer nombreMaxParticipants;
     private LocalDate dateDebutInscription;
     private LocalDate dateFinInscription;
-
+    private Boolean sondage; // true si le voyage est en mode "sondage" (dates non fixées)
     /** Photo de couverture (URL vers le store s3) */
     private String coverPhotoUrl;
 
@@ -68,6 +70,10 @@ public class Voyage {
     @OneToMany(mappedBy = "voyage", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<FormaliteVoyage> formalites = new ArrayList<>(); // clonées depuis FormalitePaysTemplate
 
+    @OneToMany(mappedBy = "voyage", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<VoyagePreference> preferences = new HashSet<>();
+
+    @Transient
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
