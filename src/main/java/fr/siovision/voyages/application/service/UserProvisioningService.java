@@ -7,8 +7,8 @@ public interface UserProvisioningService {
     User upsertFromKeycloak(
             String keycloakId,
             String email,
-            String nom,
-            String prenom,
+            String lastName,
+            String firstName,
             UserRole preferredRole
     );
 }

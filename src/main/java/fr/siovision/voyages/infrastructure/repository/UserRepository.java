@@ -19,7 +19,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
                 SELECT u
                 FROM User u
                 WHERE COALESCE(:q, '') = ''
-                   OR lower(u.nom) LIKE lower(concat('%', :q, '%'))
+                   OR lower(u.lastName) LIKE lower(concat('%', :q, '%'))
             """)
     Page<User> search(@Param("q") String q, Pageable pageable);
 

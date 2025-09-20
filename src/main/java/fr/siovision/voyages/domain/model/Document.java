@@ -15,29 +15,30 @@ import java.time.LocalDate;
 public class Document {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cust_seq")
-    @SequenceGenerator(name = "cust_seq", sequenceName = "cust_seq", allocationSize = 50)
+    @SequenceGenerator(name = "cust_seq", sequenceName = "cust_seq")
     private Long id;
 
-    private String fichierNom;
-    private String fichierType;
-    private Long fichierTaille;
-    private String fichierUrl;
+    private String fileName;
+    private String fileType;
+    private Long fileSize;
+    private String fileUrl;
 
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false)
-    private TypeDocument typeDocument;
+    private DocumentType documentType;
 
     @Enumerated(EnumType.STRING)
-    private EtatDocument etatDocument;
+    private DocumentStatus documentStatus;
 
-    private String numero;
-    private LocalDate dateEmission;
-    private LocalDate dateExpiration;
+    private String fileNumber;
+    // dateEmission;
+    private LocalDate deliveryDate;
+    private LocalDate expirationDate;
 
     @ManyToOne
     @JoinColumn(nullable = false)
-    private VoyageParticipant voyageParticipant;
+    private TripParticipant tripParticipant;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

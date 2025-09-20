@@ -20,7 +20,7 @@ public class SectionController {
     @GetMapping()
     public ResponseEntity<Page<SectionDTO>> list(
             @RequestParam(required = false) String q,
-            @PageableDefault(size = 20, sort = "libelle", direction = Sort.Direction.ASC) Pageable pageable
+            @PageableDefault(size = 20, sort = "label", direction = Sort.Direction.ASC) Pageable pageable
     ) {
         Page<SectionDTO> sections = sectionService.list(q, pageable);
         return ResponseEntity.ok(sections);
@@ -39,10 +39,10 @@ public class SectionController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping()
-    public ResponseEntity<SectionDTO> createSection(@RequestBody SectionDTO sectionDTO) {
+    public ResponseEntity<Long> createSection(@RequestBody SectionDTO sectionDTO) {
         // Créer une nouvelle section
         SectionDTO createdSection = sectionService.createSection(sectionDTO);
-        return ResponseEntity.status(201).body(createdSection);
+        return ResponseEntity.status(201).body(createdSection.getId());
     }
 
     @PreAuthorize("hasRole('ADMIN')")

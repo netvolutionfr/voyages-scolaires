@@ -22,7 +22,7 @@ import java.util.UUID;
 public class Participant {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cust_seq")
-    @SequenceGenerator(name = "cust_seq", sequenceName = "cust_seq", allocationSize = 50)
+    @SequenceGenerator(name = "cust_seq", sequenceName = "cust_seq")
     private Long id;
 
     @EqualsAndHashCode.Include
@@ -30,14 +30,14 @@ public class Participant {
     private UUID publicId = UUID.randomUUID();
 
     @Column(nullable=false)
-    private String nom;
+    private String lastName;
 
     @Column(nullable=false)
-    private String prenom;
+    private String firstName;
 
     @Convert(converter = CryptoConverter.class)
     @Column(nullable=false)
-    private String sexe; // M, F, Autre
+    private String gender; // "M", "F", "N"
 
     @Column(nullable=false)
     private String email;
@@ -47,7 +47,7 @@ public class Participant {
 
     @Convert(converter = CryptoDateConverter.class)
     @Column(columnDefinition = "TEXT")
-    private LocalDate dateNaissance;
+    private LocalDate birthDate;
 
     @ManyToOne
     @JoinColumn(name = "section_id", nullable = false)
@@ -69,7 +69,7 @@ public class Participant {
     private List<Document> documents;
 
     @OneToMany(mappedBy = "participant")
-    private List<VoyageParticipant> voyages;
+    private List<TripParticipant> trips;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

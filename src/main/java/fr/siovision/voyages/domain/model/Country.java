@@ -3,7 +3,8 @@ package fr.siovision.voyages.domain.model;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -11,16 +12,17 @@ import java.util.UUID;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class Section {
+public class Country {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cust_seq")
     @SequenceGenerator(name = "cust_seq", sequenceName = "cust_seq")
     private Long id;
 
-    @EqualsAndHashCode.Include
-    @Column(nullable = false, updatable = false, unique = true)
-    private UUID publicId = UUID.randomUUID();
+    private String name;
 
-    private String label;
-    private String description;
+    @OneToMany(mappedBy = "country",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY)
+    private List<CountryFormalityTemplate> countryFormalities = new ArrayList<>();
 }

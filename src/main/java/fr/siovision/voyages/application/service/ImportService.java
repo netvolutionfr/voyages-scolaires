@@ -68,25 +68,25 @@ public class ImportService {
             for (CSVRecord rec : records) {
                 rows.add(new ImportRow(
                         rec.get("role"),
-                        rec.get("nom"),
-                        rec.get("prenom"),
+                        rec.get("lastName"),
+                        rec.get("firstName"),
                         rec.get("email"),
                         rec.get("telephone"),
-                        rec.get("sexe"),
+                        rec.get("gender"),
                         rec.get("section"),
-                        rec.get("dateNaissance"),
-                        rec.get("parent1_nom"),
-                        rec.get("parent1_prenom"),
+                        rec.get("birthDate"),
+                        rec.get("parent1_lastName"),
+                        rec.get("parent1_firstName"),
                         rec.get("parent1_email"),
                         rec.get("parent1_tel"),
-                        rec.get("parent2_nom"),
-                        rec.get("parent2_prenom"),
+                        rec.get("parent2_lastName"),
+                        rec.get("parent2_firstName"),
                         rec.get("parent2_email"),
                         rec.get("parent2_tel")
                 ));
             }
         } catch (Exception e) {
-            throw new RuntimeException("Erreur de parsing CSV: " + e.getMessage(), e);
+            throw new RuntimeException("Error parsing CSV: " + e.getMessage(), e);
         }
         return rows;
     }
@@ -96,22 +96,22 @@ public class ImportService {
         log.info("Handling student import for email: {}", row.getEmail());
         // 1) valider
         String studentEmail = norm(row.getEmail());
-        requireNonBlank(studentEmail, "Email étudiant manquant");
-        requireNonBlank(row.getNom(), "Nom étudiant manquant");
-        requireNonBlank(row.getPrenom(), "Prénom étudiant manquant");
+        requireNonBlank(studentEmail, "Missing student email");
+        requireNonBlank(row.getLastName(), "Missing student last name");
+        requireNonBlank(row.getFirstName(), "Missing student first name");
         // si sexe n'est pas M ou F, le remplacer par "N"
-        if (row.getSexe() == null || !(row.getSexe().equalsIgnoreCase("M") || row.getSexe().equalsIgnoreCase("F"))) {
-            row.setSexe("N");
+        if (row.getGender() == null || !(row.getGender().equalsIgnoreCase("M") || row.getGender().equalsIgnoreCase("F"))) {
+            row.setGender("N");
         }
 
         // 2) upsert User (STUDENT)
         User studentUser = userRepo.findByEmail(studentEmail)
-                .map(u -> updateNamesIfChanged(u, row.getNom(), row.getPrenom(), row.getTelephone(), UserRole.STUDENT))
+                .map(u -> updateNamesIfChanged(u, row.getLastName(), row.getFirstName(), row.getTelephone(), UserRole.STUDENT))
                 .orElseGet(() -> {
                     User u = new User();
                     u.setEmail(studentEmail);
-                    u.setNom(row.getNom().trim());
-                    u.setPrenom(row.getPrenom().trim());
+                    u.setLastName(row.getLastName().trim());
+                    u.setFirstName(row.getFirstName().trim());
                     u.setTelephone(emptyToNull(row.getTelephone()));
                     u.setRole(UserRole.STUDENT);
                     return userRepo.save(u);
@@ -121,25 +121,25 @@ public class ImportService {
         Participant participant = participantRepo.findByStudentAccount_Email(studentEmail)
                 .orElseGet(() -> {
                     Participant p = new Participant();
-                    p.setNom(row.getNom().trim());
-                    p.setPrenom(row.getPrenom().trim());
-                    p.setSexe(row.getSexe());
+                    p.setLastName(row.getLastName().trim());
+                    p.setFirstName(row.getFirstName().trim());
+                    p.setGender(row.getGender());
                     p.setEmail(studentEmail);
                     p.setTelephone(emptyToNull(row.getTelephone()));
-                    Section section = sectionRepo.findByLibelle(row.getSection().trim())
+                    Section section = sectionRepo.findByLabel(row.getSection().trim())
                             .orElseGet(() -> {
                                 Section s = new Section();
-                                s.setLibelle(row.getSection().trim());
+                                s.setLabel(row.getSection().trim());
                                 return sectionRepo.save(s);
                             });
 
                     p.setSection(section);
                     // Parser dateNaissance
-                    if (row.getDateNaissance() != null && !row.getDateNaissance().isBlank()) {
+                    if (row.getBirthDate() != null && !row.getBirthDate().isBlank()) {
                         try {
-                            p.setDateNaissance(java.time.LocalDate.parse(row.getDateNaissance().trim()));
+                            p.setBirthDate(java.time.LocalDate.parse(row.getBirthDate().trim()));
                         } catch (Exception e) {
-                            throw new IllegalArgumentException("Date de naissance invalide pour " + studentEmail + ": " + row.getDateNaissance());
+                            throw new IllegalArgumentException("Invalid birth date for " + studentEmail + ": " + row.getBirthDate());
                         }
                     }
                     p.setStudentAccount(studentUser); // obligatoire par conception
@@ -147,14 +147,14 @@ public class ImportService {
                 });
 
         // Si déjà existant, mettre à jour champs utiles
-        participant.setNom(row.getNom().trim());
-        participant.setPrenom(row.getPrenom().trim());
+        participant.setLastName(row.getLastName().trim());
+        participant.setFirstName(row.getFirstName().trim());
         participant.setTelephone(emptyToNull(row.getTelephone()));
         participantRepo.save(participant);
 
         // 4) parents (facultatifs) → upsert User(PARENT) + liens ParentChild
-        User parent1 = upsertParent(row.getParent1Email(), row.getParent1Nom(), row.getParent1Prenom(), row.getParent1Tel());
-        User parent2 = upsertParent(row.getParent2Email(), row.getParent2Nom(), row.getParent2Prenom(), row.getParent2Tel());
+        User parent1 = upsertParent(row.getParent1Email(), row.getParent1LastName(), row.getParent1FirstName(), row.getParent1Tel());
+        User parent2 = upsertParent(row.getParent2Email(), row.getParent2LastName(), row.getParent2FirstName(), row.getParent2Tel());
 
         // 5) liens ParentChild (uniques)
         if (parent1 != null) linkParentToChildOnce(parent1, participant); // ou MERE/PERE si tu sais inférer
@@ -172,8 +172,8 @@ public class ImportService {
         userRepo.findByEmail(row.getEmail()).orElseGet(() -> {
             User newuser = new User();
             newuser.setEmail(row.getEmail());
-            newuser.setPrenom(row.getPrenom());
-            newuser.setNom(row.getNom());
+            newuser.setFirstName(row.getFirstName());
+            newuser.setLastName(row.getLastName());
             newuser.setTelephone(row.getTelephone());
             newuser.setRole(UserRole.TEACHER);
             log.info("Creating new teacher user: {}", newuser);
@@ -196,17 +196,17 @@ public class ImportService {
                 .orElseGet(() -> {
                     User p = new User();
                     p.setEmail(e);
-                    p.setNom(safe(nom));
-                    p.setPrenom(safe(prenom));
+                    p.setLastName(safe(nom));
+                    p.setFirstName(safe(prenom));
                     p.setTelephone(emptyToNull(tel));
                     p.setRole(UserRole.PARENT);
                     return userRepo.save(p);
                 });
     }
 
-    private User updateNamesIfChanged(User u, String nom, String prenom, String tel, UserRole targetRole) {
-        if (nom != null && !nom.isBlank()) u.setNom(nom.trim());
-        if (prenom != null && !prenom.isBlank()) u.setPrenom(prenom.trim());
+    private User updateNamesIfChanged(User u, String lastName, String firsName, String tel, UserRole targetRole) {
+        if (lastName != null && !lastName.isBlank()) u.setLastName(lastName.trim());
+        if (firsName != null && !firsName.isBlank()) u.setFirstName(firsName.trim());
         if (tel != null && !tel.isBlank()) u.setTelephone(tel.trim());
         // ne rétrograde pas un ADMIN ; sinon, harmonise
         if (u.getRole() == null || u.getRole() == UserRole.STUDENT || u.getRole() == UserRole.PARENT)

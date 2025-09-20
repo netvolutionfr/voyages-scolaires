@@ -42,7 +42,7 @@ public class UserController {
     public ResponseEntity<Page<UserResponse>> getUsers(
             @AuthenticationPrincipal Jwt jwt,
             @RequestParam(value = "role.in", required = false) List<UserRole> roles,
-            @PageableDefault(size = 20, sort = "nom", direction = Sort.Direction.ASC) Pageable pageable
+            @PageableDefault(size = 20, sort = "lastName", direction = Sort.Direction.ASC) Pageable pageable
     ) {
         Page<UserResponse> users = userService.getAllUsers(jwt, roles, pageable);
         return ResponseEntity.ok(users);

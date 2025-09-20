@@ -6,45 +6,43 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class ParticipantProfileResponse {
     private Long id;
-    private String nom;
-    private String prenom;
-    private String sexe; // M, F, Autre
+    private String lastName;
+    private String firstName;
+    private String gender; // M, F, N
     private String email;
     private String telephone;
-    private String dateNaissance;
+    private String birthDate;
     private Long sectionId;
-    private String sectionLibelle; // Nom de la section (optionnel, peut être ajouté si nécessaire)
+    private String sectionLabel; // Nom de la section (optionnel, peut être ajouté si nécessaire)
     private Long legalGuardianId; // ID du parent légal primaire (si mineur)
     private String legalGuardianName; // Nom du parent légal primaire (si mineur)
     private String legalGuardianEmail; // Email du parent légal primaire (si mineur)
 
     public ParticipantProfileResponse(Participant participant) {
         this.id = participant.getId();
-        this.nom = participant.getNom();
-        this.prenom = participant.getPrenom();
-        this.sexe = participant.getSexe();
+        this.lastName = participant.getLastName();
+        this.firstName = participant.getFirstName();
+        this.gender = participant.getGender();
         this.email = participant.getEmail();
         this.telephone = participant.getTelephone();
-        this.dateNaissance = participant.getDateNaissance() != null ? participant.getDateNaissance().toString() : null;
+        this.birthDate = participant.getBirthDate() != null ? participant.getBirthDate().toString() : null;
 
         Section section = participant.getSection();
         if (section != null) {
             this.sectionId = section.getId();
-            this.sectionLibelle = section.getLibelle(); // Assurez-vous que la classe Section a une méthode getNom()
+            this.sectionLabel = section.getLabel(); // Assurez-vous que la classe Section a une méthode getNom()
         } else {
             this.sectionId = null;
-            this.sectionLibelle = null;
+            this.sectionLabel = null;
         }
         if (participant.getLegalGuardian() != null) {
             this.legalGuardianId = participant.getLegalGuardian().getId();
-            this.legalGuardianName = participant.getLegalGuardian().getNom() + " " + participant.getLegalGuardian().getPrenom();
+            this.legalGuardianName = participant.getLegalGuardian().getLastName() + " " + participant.getLegalGuardian().getFirstName();
             this.legalGuardianEmail = participant.getLegalGuardian().getEmail();
         } else {
             this.legalGuardianId = null;

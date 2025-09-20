@@ -36,19 +36,19 @@ public class UserProvisioningServiceImpl implements UserProvisioningService {
                 .orElseGet(() -> createNew(keycloakId, email, nom, prenom, incoming));
     }
 
-    private User updateIfNeeded(User u, String email, String nom, String prenom, UserRole incoming) {
+    private User updateIfNeeded(User u, String email, String lastName, String firstName, UserRole incoming) {
         boolean dirty = false;
 
         if (email != null && !email.equals(u.getEmail())) {
             u.setEmail(email);
             dirty = true;
         }
-        if (nom != null && !nom.equals(u.getNom())) {
-            u.setNom(cap(nom));
+        if (lastName != null && !lastName.equals(u.getLastName())) {
+            u.setLastName(cap(lastName));
             dirty = true;
         }
-        if (prenom != null && !prenom.equals(u.getPrenom())) {
-            u.setPrenom(cap(prenom));
+        if (firstName != null && !firstName.equals(u.getFirstName())) {
+            u.setFirstName(cap(firstName));
             dirty = true;
         }
 
@@ -64,12 +64,12 @@ public class UserProvisioningServiceImpl implements UserProvisioningService {
         return u;
     }
 
-    private User createNew(String keycloakId, String email, String nom, String prenom, UserRole incoming) {
+    private User createNew(String keycloakId, String email, String lastName, String firstName, UserRole incoming) {
         User u = new User();
         u.setKeycloakId(keycloakId);
         u.setEmail(email);
-        u.setNom(cap(nom));
-        u.setPrenom(cap(prenom));
+        u.setLastName(cap(lastName));
+        u.setFirstName(cap(firstName));
         u.setRole(incoming == null ? UserRole.UNKNOWN : incoming);
         u.setCreatedAt(LocalDateTime.now());
         return userRepository.save(u);

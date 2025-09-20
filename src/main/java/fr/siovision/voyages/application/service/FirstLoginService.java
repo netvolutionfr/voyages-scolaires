@@ -38,8 +38,8 @@ public class FirstLoginService {
         if (user.getKeycloakId() == null) {
             String kcId = keycloakService.createUserIfAbsent(
                     user.getEmail(),
-                    user.getPrenom(),
-                    user.getNom(),
+                    user.getFirstName(),
+                    user.getLastName(),
                     user.getRole(),
                     true
             );

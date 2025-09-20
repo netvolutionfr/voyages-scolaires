@@ -4,14 +4,10 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.UUID;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SectionDTO {
+public class CountryDTO {
     private Long id;
-    private UUID publicId;
-    private String label;
-    private String description;
+    private String name;
 }

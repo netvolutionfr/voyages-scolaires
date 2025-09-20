@@ -31,8 +31,8 @@ public class User {
 
     @Column(unique = true)
     String email; // email de l'utilisateur, utilisé pour l'authentification
-    String nom; // nom de famille de l'utilisateur
-    String prenom; // prénom de l'utilisateur
+    String lastName; // nom de famille de l'utilisateur
+    String firstName; // prénom de l'utilisateur
     String telephone;
 
     @Enumerated(EnumType.STRING)
@@ -42,7 +42,7 @@ public class User {
     String consentText;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<VoyagePreference> voyagePreferences = new HashSet<>();
+    private Set<TripPreference> tripPreferences = new HashSet<>();
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

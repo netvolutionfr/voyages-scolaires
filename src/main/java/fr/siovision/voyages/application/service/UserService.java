@@ -40,8 +40,8 @@ public class UserService {
             User newuser = new User();
             newuser.setKeycloakId(keycloakId);
             newuser.setEmail(jwt.getClaimAsString("email"));
-            newuser.setPrenom(jwt.getClaimAsString("given_name"));
-            newuser.setNom(jwt.getClaimAsString("family_name"));
+            newuser.setFirstName(jwt.getClaimAsString("given_name"));
+            newuser.setLastName(jwt.getClaimAsString("family_name"));
             newuser.setRole(tokenRole);
             log.info("Creating new user: {}", newuser);
             return userRepository.save(newuser);
@@ -124,9 +124,9 @@ public class UserService {
         return new UserResponse(
                 user.getPublicId(),
                 user.getEmail(),
-                user.getNom(),
-                user.getPrenom(),
-                user.getPrenom() + " " + user.getNom(),
+                user.getLastName(),
+                user.getFirstName(),
+                user.getFirstName() + " " + user.getLastName(),
                 user.getTelephone(),
                 validated,
                 user.getRole() != null ? user.getRole().name() : UserRole.UNKNOWN.name()

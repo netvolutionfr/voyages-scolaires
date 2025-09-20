@@ -44,7 +44,7 @@ public class SectionService {
         Section updated = sectionRepository.findById(id)
                 .map(existing -> {
                     existing.setPublicId(sectionDTO.getPublicId());
-                    existing.setLibelle(sectionDTO.getLibelle());
+                    existing.setLabel(sectionDTO.getLabel());
                     existing.setDescription(sectionDTO.getDescription());
                     return sectionRepository.save(existing);
                 })
@@ -75,7 +75,7 @@ public class SectionService {
         return new SectionDTO(
                 section.getId(),
                 section.getPublicId(),
-                section.getLibelle(),
+                section.getLabel(),
                 section.getDescription()
         );
     }
@@ -84,7 +84,7 @@ public class SectionService {
         Section section = new Section();
 
         section.setPublicId(dto.getPublicId());
-        section.setLibelle(dto.getLibelle());
+        section.setLabel(dto.getLabel());
         section.setDescription(dto.getDescription());
         return section;
     }

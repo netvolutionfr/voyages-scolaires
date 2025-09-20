@@ -5,20 +5,17 @@ import fr.siovision.voyages.domain.model.Section;
 import fr.siovision.voyages.domain.model.User;
 import fr.siovision.voyages.domain.model.UserRole;
 import fr.siovision.voyages.infrastructure.dto.ParticipantProfileResponse;
-import fr.siovision.voyages.infrastructure.dto.ParticipantRequest;
 import fr.siovision.voyages.infrastructure.dto.SectionDTO;
 import fr.siovision.voyages.infrastructure.repository.ParticipantRepository;
 import fr.siovision.voyages.infrastructure.repository.SectionRepository;
 import fr.siovision.voyages.infrastructure.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,15 +28,13 @@ public class ParticipantService {
     private final CurrentUserService currentUserService;
     private final AuthorizationService authorizationService;
     private final SectionRepository sectionRepository;
-    private final KeycloakService keycloakService;
-    private final UserProvisioningService userProvisioningService;
 
     public Page<SectionDTO> list(String q, Pageable pageable) {
         Page<Section> sections = sectionRepository.search(q, pageable);
         return sections.map(section -> new SectionDTO(
                 section.getId(),
                 section.getPublicId(),
-                section.getLibelle(),
+                section.getLabel(),
                 section.getDescription()
         ));
     }

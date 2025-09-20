@@ -7,12 +7,12 @@ import java.util.UUID;
 
 @Data
 public class ParticipantRequest {
-    private String nom;
-    private String prenom;
-    private String sexe; // M, F, Autre
+    private String lastName;
+    private String firstName;
+    private String gender; // M, F, N
     private String email;
     private String telephone;
-    private LocalDate dateNaissance;
+    private LocalDate birthDate;
     private Long sectionId; // ID de la section à laquelle le participant est associé
     private UUID legalGuardianId; // ID du parent légal primaire (si mineur)
     private UUID studentAccountId; // ID du compte de l'élève (optionnel : mineur avec accès; obligatoire si majeur autonome)

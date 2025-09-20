@@ -9,19 +9,19 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ImportRow {
     private String role;
-    private String nom;
-    private String prenom;
+    private String lastName;
+    private String firstName;
     private String email;
     private String telephone;
-    private String sexe;
+    private String gender;
     private String section;
-    private String dateNaissance;
-    private String parent1Nom;
-    private String parent1Prenom;
+    private String birthDate;
+    private String parent1LastName;
+    private String parent1FirstName;
     private String parent1Email;
     private String parent1Tel;
-    private String parent2Nom;
-    private String parent2Prenom;
+    private String parent2LastName;
+    private String parent2FirstName;
     private String parent2Email;
     private String parent2Tel;
 }

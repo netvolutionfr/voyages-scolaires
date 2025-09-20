@@ -20,7 +20,7 @@ public interface ParticipantRepository extends JpaRepository<Participant, UUID> 
                 SELECT p
                 FROM Participant p
                 WHERE COALESCE(:q, '') = ''
-                   OR lower(p.prenom) LIKE lower(concat('%', :q, '%'))
+                   OR lower(p.firstName) LIKE lower(concat('%', :q, '%'))
             """)
     Page<Participant> search(@Param("q") String q, Pageable pageable);
 

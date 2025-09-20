@@ -17,14 +17,14 @@ public class CurrentUserService {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null || !(authentication.getPrincipal() instanceof Jwt jwt)) {
-            throw new IllegalStateException("Utilisateur non authentifié ou token invalide");
+            throw new IllegalStateException("User not authenticated or invalid token");
         }
 
         String keycloakId = jwt.getSubject(); // "sub" du JWT = ID Keycloak
 
         return userRepository.findByKeycloakId(keycloakId)
                 .orElseThrow(() -> new IllegalStateException(
-                        "Aucun utilisateur trouvé pour keycloakId=" + keycloakId
+                        "No user found with Keycloak ID: " + keycloakId
                 ));
     }
 }

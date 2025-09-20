@@ -1,75 +1,80 @@
 CREATE SEQUENCE IF NOT EXISTS cust_seq START WITH 1 INCREMENT BY 50;
 
+CREATE TABLE country
+(
+    id   BIGINT NOT NULL,
+    name VARCHAR(255),
+    CONSTRAINT pk_country PRIMARY KEY (id)
+);
+
+CREATE TABLE country_formality_templates
+(
+    id                        BIGINT      NOT NULL,
+    country_id                BIGINT      NOT NULL,
+    document_type_id          BIGINT      NOT NULL,
+    type                      VARCHAR(16) NOT NULL,
+    required                  BOOLEAN     NOT NULL,
+    days_before_trip          INTEGER,
+    accepted_mime             VARCHAR(1024),
+    max_size_mb               INTEGER,
+    days_retention_after_trip INTEGER,
+    store_scan                BOOLEAN,
+    trip_condition            JSONB,
+    notes                     VARCHAR(512),
+    CONSTRAINT pk_country_formality_templates PRIMARY KEY (id)
+);
+
 CREATE TABLE document
 (
-    id                    BIGINT NOT NULL,
-    fichier_nom           VARCHAR(255),
-    fichier_type          VARCHAR(255),
-    fichier_taille        BIGINT,
-    fichier_url           VARCHAR(255),
-    type_document_id      BIGINT NOT NULL,
-    etat_document         VARCHAR(255),
-    numero                VARCHAR(255),
-    date_emission         date,
-    date_expiration       date,
-    voyage_participant_id BIGINT NOT NULL,
-    created_at            TIMESTAMP WITHOUT TIME ZONE,
-    updated_at            TIMESTAMP WITHOUT TIME ZONE,
+    id                  BIGINT NOT NULL,
+    file_name           VARCHAR(255),
+    file_type           VARCHAR(255),
+    file_size           BIGINT,
+    file_url            VARCHAR(255),
+    document_type_id    BIGINT NOT NULL,
+    document_status     VARCHAR(255),
+    file_number         VARCHAR(255),
+    delivery_date       date,
+    expiration_date     date,
+    trip_participant_id BIGINT NOT NULL,
+    created_at          TIMESTAMP WITHOUT TIME ZONE,
+    updated_at          TIMESTAMP WITHOUT TIME ZONE,
     CONSTRAINT pk_document PRIMARY KEY (id)
 );
 
-CREATE TABLE formalites_pays_templates
+CREATE TABLE document_type
 (
-    id                              BIGINT      NOT NULL,
-    pays_id                         BIGINT      NOT NULL,
-    type_document_id                BIGINT      NOT NULL,
-    type                            VARCHAR(16) NOT NULL,
-    required                        BOOLEAN     NOT NULL,
-    delai_fourniture_avant_depart   INTEGER,
-    accepted_mime                   VARCHAR(1024),
-    max_size_mb                     INTEGER,
-    delai_conservation_apres_voyage INTEGER,
-    store_scan                      BOOLEAN,
-    trip_condition                  JSONB,
-    notes                           VARCHAR(512),
-    CONSTRAINT pk_formalites_pays_templates PRIMARY KEY (id)
+    id          BIGINT NOT NULL,
+    abr         VARCHAR(255),
+    label       VARCHAR(255),
+    description VARCHAR(255),
+    CONSTRAINT pk_documenttype PRIMARY KEY (id)
 );
 
-CREATE TABLE formalites_voyage
+CREATE TABLE parent_child
 (
-    id                              BIGINT      NOT NULL,
-    voyage_id                       BIGINT      NOT NULL,
-    source_template_id              BIGINT,
-    type_document_id                BIGINT      NOT NULL,
-    type                            VARCHAR(16) NOT NULL,
-    required                        BOOLEAN     NOT NULL,
-    delai_fourniture_avant_depart   INTEGER,
-    accepted_mime                   VARCHAR(1024),
-    max_size_mb                     INTEGER,
-    delai_conservation_apres_voyage INTEGER,
-    store_scan                      BOOLEAN,
-    trip_condition                  JSONB,
-    notes                           VARCHAR(512),
-    manually_added                  BOOLEAN,
-    CONSTRAINT pk_formalites_voyage PRIMARY KEY (id)
+    id        BIGINT NOT NULL,
+    parent_id BIGINT NOT NULL,
+    child_id  BIGINT NOT NULL,
+    CONSTRAINT pk_parentchild PRIMARY KEY (id)
 );
 
 CREATE TABLE participant
 (
-    id                    BIGINT       NOT NULL,
-    public_id             UUID         NOT NULL,
-    nom                   VARCHAR(255) NOT NULL,
-    prenom                VARCHAR(255) NOT NULL,
-    sexe                  VARCHAR(255) NOT NULL,
-    email                 VARCHAR(255) NOT NULL,
-    telephone             VARCHAR(255),
-    date_naissance        TEXT,
-    section_id            BIGINT       NOT NULL,
-    parent_user_id        BIGINT,
-    student_user_id       BIGINT,
-    primary_contact_email VARCHAR(255),
-    created_at            TIMESTAMP WITHOUT TIME ZONE,
-    updated_at            TIMESTAMP WITHOUT TIME ZONE,
+    id                     BIGINT       NOT NULL,
+    public_id              UUID         NOT NULL,
+    last_name              VARCHAR(255) NOT NULL,
+    first_name             VARCHAR(255) NOT NULL,
+    gender                 VARCHAR(255) NOT NULL,
+    email                  VARCHAR(255) NOT NULL,
+    telephone              VARCHAR(255),
+    birth_date             TEXT,
+    section_id             BIGINT       NOT NULL,
+    student_user_id        BIGINT       NOT NULL,
+    legal_guardian_user_id BIGINT,
+    primary_contact_email  VARCHAR(255),
+    created_at             TIMESTAMP WITHOUT TIME ZONE,
+    updated_at             TIMESTAMP WITHOUT TIME ZONE,
     CONSTRAINT pk_participant PRIMARY KEY (id)
 );
 
@@ -79,28 +84,107 @@ CREATE TABLE participant_documents
     documents_id   BIGINT NOT NULL
 );
 
-CREATE TABLE pays
-(
-    id  BIGINT NOT NULL,
-    nom VARCHAR(255),
-    CONSTRAINT pk_pays PRIMARY KEY (id)
-);
-
 CREATE TABLE section
 (
     id          BIGINT NOT NULL,
-    libelle     VARCHAR(255),
+    public_id   UUID   NOT NULL,
+    label       VARCHAR(255),
     description VARCHAR(255),
     CONSTRAINT pk_section PRIMARY KEY (id)
 );
 
-CREATE TABLE type_document
+CREATE TABLE trip
 (
-    id          BIGINT NOT NULL,
-    abr         VARCHAR(255),
-    nom         VARCHAR(255),
-    description VARCHAR(255),
-    CONSTRAINT pk_typedocument PRIMARY KEY (id)
+    id                        BIGINT NOT NULL,
+    public_id                 UUID   NOT NULL,
+    title                     VARCHAR(255),
+    description               VARCHAR(255),
+    destination               VARCHAR(255),
+    total_price               INTEGER,
+    family_contribution       INTEGER,
+    country_id                BIGINT,
+    departure_date            date,
+    return_date               date,
+    min_participants          INTEGER,
+    max_participants          INTEGER,
+    registration_opening_date date,
+    registration_closing_date date,
+    poll                      BOOLEAN,
+    cover_photo_url           VARCHAR(255),
+    updated_at                TIMESTAMP WITHOUT TIME ZONE,
+    CONSTRAINT pk_trip PRIMARY KEY (id)
+);
+
+CREATE TABLE trip_chaperones
+(
+    trip_id       BIGINT NOT NULL,
+    chaperones_id BIGINT NOT NULL
+);
+
+CREATE TABLE trip_formality
+(
+    id                        BIGINT      NOT NULL,
+    trip_id                   BIGINT      NOT NULL,
+    source_template_id        BIGINT,
+    document_type_id          BIGINT      NOT NULL,
+    formality_type            VARCHAR(16) NOT NULL,
+    required                  BOOLEAN     NOT NULL,
+    days_before_trip          INTEGER,
+    accepted_mime             VARCHAR(1024),
+    max_size_mb               INTEGER,
+    days_retention_after_trip INTEGER,
+    store_scan                BOOLEAN,
+    trip_condition            JSONB,
+    notes                     VARCHAR(512),
+    manually_added            BOOLEAN,
+    CONSTRAINT pk_trip_formality PRIMARY KEY (id)
+);
+
+CREATE TABLE trip_mandatory_document_types
+(
+    trip_id                     BIGINT NOT NULL,
+    mandatory_document_types_id BIGINT NOT NULL
+);
+
+CREATE TABLE trip_participant
+(
+    id                  BIGINT  NOT NULL,
+    chaperone           BOOLEAN NOT NULL,
+    registration_date   TIMESTAMP WITHOUT TIME ZONE,
+    decision_date       TIMESTAMP WITHOUT TIME ZONE,
+    registration_status SMALLINT,
+    decision_message    VARCHAR(255),
+    admin_notes         VARCHAR(255),
+    trip_id             BIGINT,
+    participant_id      BIGINT,
+    CONSTRAINT pk_tripparticipant PRIMARY KEY (id)
+);
+
+CREATE TABLE trip_participants
+(
+    trip_id         BIGINT NOT NULL,
+    participants_id BIGINT NOT NULL
+);
+
+CREATE TABLE trip_preferences
+(
+    id       BIGINT GENERATED BY DEFAULT AS IDENTITY NOT NULL,
+    trip_id  BIGINT                                  NOT NULL,
+    user_id  BIGINT                                  NOT NULL,
+    interest VARCHAR(255)                            NOT NULL,
+    CONSTRAINT pk_trip_preferences PRIMARY KEY (id)
+);
+
+CREATE TABLE trip_sections
+(
+    trip_id     BIGINT NOT NULL,
+    sections_id BIGINT NOT NULL
+);
+
+CREATE TABLE trip_sectors
+(
+    trip_id BIGINT NOT NULL,
+    sector  VARCHAR(255)
 );
 
 CREATE TABLE users
@@ -109,10 +193,9 @@ CREATE TABLE users
     public_id        UUID   NOT NULL,
     keycloak_id      VARCHAR(255),
     email            VARCHAR(255),
-    nom              VARCHAR(255),
-    prenom           VARCHAR(255),
+    last_name        VARCHAR(255),
+    first_name       VARCHAR(255),
     telephone        VARCHAR(255),
-    parent_user_id   BIGINT,
     role             VARCHAR(255),
     consent_given_at date,
     consent_text     VARCHAR(255),
@@ -121,69 +204,23 @@ CREATE TABLE users
     CONSTRAINT pk_users PRIMARY KEY (id)
 );
 
-CREATE TABLE voyage
-(
-    id                      BIGINT NOT NULL,
-    public_id               UUID   NOT NULL,
-    nom                     VARCHAR(255),
-    description             VARCHAR(255),
-    destination             VARCHAR(255),
-    pays_id                 BIGINT,
-    date_depart             date,
-    date_retour             date,
-    nombre_min_participants INTEGER,
-    nombre_max_participants INTEGER,
-    date_debut_inscription  date,
-    date_fin_inscription    date,
-    created_at              TIMESTAMP WITHOUT TIME ZONE,
-    updated_at              TIMESTAMP WITHOUT TIME ZONE,
-    CONSTRAINT pk_voyage PRIMARY KEY (id)
-);
+ALTER TABLE trip_preferences
+    ADD CONSTRAINT uc_37797cf027ed8f998f5ac6b72 UNIQUE (trip_id, user_id);
 
-CREATE TABLE voyage_documents_obligatoires
-(
-    voyage_id                 BIGINT NOT NULL,
-    documents_obligatoires_id BIGINT NOT NULL
-);
-
-CREATE TABLE voyage_organisateurs
-(
-    voyage_id        BIGINT NOT NULL,
-    organisateurs_id BIGINT NOT NULL
-);
-
-CREATE TABLE voyage_participant
-(
-    id                   BIGINT  NOT NULL,
-    accompagnateur       BOOLEAN NOT NULL,
-    organisateur         BOOLEAN NOT NULL,
-    date_inscription     TIMESTAMP WITHOUT TIME ZONE,
-    date_engagement      TIMESTAMP WITHOUT TIME ZONE,
-    statut_inscription   SMALLINT,
-    commentaire_decision VARCHAR(255),
-    message_motivation   VARCHAR(255),
-    voyage_id            BIGINT,
-    participant_id       BIGINT,
-    CONSTRAINT pk_voyageparticipant PRIMARY KEY (id)
-);
-
-CREATE TABLE voyage_participants
-(
-    voyage_id       BIGINT NOT NULL,
-    participants_id BIGINT NOT NULL
-);
-
-CREATE TABLE voyage_sections
-(
-    voyage_id   BIGINT NOT NULL,
-    sections_id BIGINT NOT NULL
-);
+ALTER TABLE parent_child
+    ADD CONSTRAINT uc_d8c42c6b975ff4507ae9dbd9f UNIQUE (parent_id, child_id);
 
 ALTER TABLE participant_documents
     ADD CONSTRAINT uc_participant_documents_documents UNIQUE (documents_id);
 
 ALTER TABLE participant
     ADD CONSTRAINT uc_participant_publicid UNIQUE (public_id);
+
+ALTER TABLE section
+    ADD CONSTRAINT uc_section_publicid UNIQUE (public_id);
+
+ALTER TABLE trip
+    ADD CONSTRAINT uc_trip_publicid UNIQUE (public_id);
 
 ALTER TABLE users
     ADD CONSTRAINT uc_users_email UNIQUE (email);
@@ -194,43 +231,33 @@ ALTER TABLE users
 ALTER TABLE users
     ADD CONSTRAINT uc_users_publicid UNIQUE (public_id);
 
-ALTER TABLE voyage
-    ADD CONSTRAINT uc_voyage_publicid UNIQUE (public_id);
-
 ALTER TABLE participant
     ADD CONSTRAINT uk_participant_student_user UNIQUE (student_user_id);
 
-ALTER TABLE document
-    ADD CONSTRAINT FK_DOCUMENT_ON_TYPEDOCUMENT FOREIGN KEY (type_document_id) REFERENCES type_document (id);
+ALTER TABLE country_formality_templates
+    ADD CONSTRAINT FK_COUNTRY_FORMALITY_TEMPLATES_ON_COUNTRY FOREIGN KEY (country_id) REFERENCES country (id);
+
+CREATE INDEX idx_fpt_country ON country_formality_templates (country_id);
+
+ALTER TABLE country_formality_templates
+    ADD CONSTRAINT FK_COUNTRY_FORMALITY_TEMPLATES_ON_DOCUMENT_TYPE FOREIGN KEY (document_type_id) REFERENCES document_type (id);
+
+CREATE INDEX idx_fpt_doc_type ON country_formality_templates (document_type_id);
 
 ALTER TABLE document
-    ADD CONSTRAINT FK_DOCUMENT_ON_VOYAGEPARTICIPANT FOREIGN KEY (voyage_participant_id) REFERENCES voyage_participant (id);
+    ADD CONSTRAINT FK_DOCUMENT_ON_DOCUMENTTYPE FOREIGN KEY (document_type_id) REFERENCES document_type (id);
 
-ALTER TABLE formalites_pays_templates
-    ADD CONSTRAINT FK_FORMALITES_PAYS_TEMPLATES_ON_PAYS FOREIGN KEY (pays_id) REFERENCES pays (id);
+ALTER TABLE document
+    ADD CONSTRAINT FK_DOCUMENT_ON_TRIPPARTICIPANT FOREIGN KEY (trip_participant_id) REFERENCES trip_participant (id);
 
-CREATE INDEX idx_fpt_country ON formalites_pays_templates (pays_id);
+ALTER TABLE parent_child
+    ADD CONSTRAINT FK_PARENTCHILD_ON_CHILD FOREIGN KEY (child_id) REFERENCES participant (id);
 
-ALTER TABLE formalites_pays_templates
-    ADD CONSTRAINT FK_FORMALITES_PAYS_TEMPLATES_ON_TYPE_DOCUMENT FOREIGN KEY (type_document_id) REFERENCES type_document (id);
-
-CREATE INDEX idx_fpt_doc_type ON formalites_pays_templates (type_document_id);
-
-ALTER TABLE formalites_voyage
-    ADD CONSTRAINT FK_FORMALITES_VOYAGE_ON_SOURCE_TEMPLATE FOREIGN KEY (source_template_id) REFERENCES formalites_pays_templates (id);
-
-ALTER TABLE formalites_voyage
-    ADD CONSTRAINT FK_FORMALITES_VOYAGE_ON_TYPE_DOCUMENT FOREIGN KEY (type_document_id) REFERENCES type_document (id);
-
-CREATE INDEX idx_fv_doc_type ON formalites_voyage (type_document_id);
-
-ALTER TABLE formalites_voyage
-    ADD CONSTRAINT FK_FORMALITES_VOYAGE_ON_VOYAGE FOREIGN KEY (voyage_id) REFERENCES voyage (id);
-
-CREATE INDEX idx_fv_voyage ON formalites_voyage (voyage_id);
+ALTER TABLE parent_child
+    ADD CONSTRAINT FK_PARENTCHILD_ON_PARENT FOREIGN KEY (parent_id) REFERENCES users (id);
 
 ALTER TABLE participant
-    ADD CONSTRAINT FK_PARTICIPANT_ON_PARENT_USER FOREIGN KEY (parent_user_id) REFERENCES users (id);
+    ADD CONSTRAINT FK_PARTICIPANT_ON_LEGAL_GUARDIAN_USER FOREIGN KEY (legal_guardian_user_id) REFERENCES users (id);
 
 ALTER TABLE participant
     ADD CONSTRAINT FK_PARTICIPANT_ON_SECTION FOREIGN KEY (section_id) REFERENCES section (id);
@@ -238,17 +265,33 @@ ALTER TABLE participant
 ALTER TABLE participant
     ADD CONSTRAINT FK_PARTICIPANT_ON_STUDENT_USER FOREIGN KEY (student_user_id) REFERENCES users (id);
 
-ALTER TABLE users
-    ADD CONSTRAINT FK_USERS_ON_PARENT_USER FOREIGN KEY (parent_user_id) REFERENCES participant (id);
+ALTER TABLE trip_participant
+    ADD CONSTRAINT FK_TRIPPARTICIPANT_ON_PARTICIPANT FOREIGN KEY (participant_id) REFERENCES participant (id);
 
-ALTER TABLE voyage_participant
-    ADD CONSTRAINT FK_VOYAGEPARTICIPANT_ON_PARTICIPANT FOREIGN KEY (participant_id) REFERENCES participant (id);
+ALTER TABLE trip_participant
+    ADD CONSTRAINT FK_TRIPPARTICIPANT_ON_TRIP FOREIGN KEY (trip_id) REFERENCES trip (id);
 
-ALTER TABLE voyage_participant
-    ADD CONSTRAINT FK_VOYAGEPARTICIPANT_ON_VOYAGE FOREIGN KEY (voyage_id) REFERENCES voyage (id);
+ALTER TABLE trip_formality
+    ADD CONSTRAINT FK_TRIP_FORMALITY_ON_DOCUMENT_TYPE FOREIGN KEY (document_type_id) REFERENCES document_type (id);
 
-ALTER TABLE voyage
-    ADD CONSTRAINT FK_VOYAGE_ON_PAYS FOREIGN KEY (pays_id) REFERENCES pays (id);
+CREATE INDEX idx_fv_doc_type ON trip_formality (document_type_id);
+
+ALTER TABLE trip_formality
+    ADD CONSTRAINT FK_TRIP_FORMALITY_ON_SOURCE_TEMPLATE FOREIGN KEY (source_template_id) REFERENCES country_formality_templates (id);
+
+ALTER TABLE trip_formality
+    ADD CONSTRAINT FK_TRIP_FORMALITY_ON_TRIP FOREIGN KEY (trip_id) REFERENCES trip (id);
+
+CREATE INDEX idx_fv_trip ON trip_formality (trip_id);
+
+ALTER TABLE trip
+    ADD CONSTRAINT FK_TRIP_ON_COUNTRY FOREIGN KEY (country_id) REFERENCES country (id);
+
+ALTER TABLE trip_preferences
+    ADD CONSTRAINT FK_TRIP_PREFERENCES_ON_TRIP FOREIGN KEY (trip_id) REFERENCES trip (id);
+
+ALTER TABLE trip_preferences
+    ADD CONSTRAINT FK_TRIP_PREFERENCES_ON_USER FOREIGN KEY (user_id) REFERENCES users (id);
 
 ALTER TABLE participant_documents
     ADD CONSTRAINT fk_pardoc_on_document FOREIGN KEY (documents_id) REFERENCES document (id);
@@ -256,26 +299,29 @@ ALTER TABLE participant_documents
 ALTER TABLE participant_documents
     ADD CONSTRAINT fk_pardoc_on_participant FOREIGN KEY (participant_id) REFERENCES participant (id);
 
-ALTER TABLE voyage_documents_obligatoires
-    ADD CONSTRAINT fk_voydocobl_on_type_document FOREIGN KEY (documents_obligatoires_id) REFERENCES type_document (id);
+ALTER TABLE trip_chaperones
+    ADD CONSTRAINT fk_tricha_on_trip FOREIGN KEY (trip_id) REFERENCES trip (id);
 
-ALTER TABLE voyage_documents_obligatoires
-    ADD CONSTRAINT fk_voydocobl_on_voyage FOREIGN KEY (voyage_id) REFERENCES voyage (id);
+ALTER TABLE trip_chaperones
+    ADD CONSTRAINT fk_tricha_on_user FOREIGN KEY (chaperones_id) REFERENCES users (id);
 
-ALTER TABLE voyage_organisateurs
-    ADD CONSTRAINT fk_voyorg_on_user FOREIGN KEY (organisateurs_id) REFERENCES users (id);
+ALTER TABLE trip_mandatory_document_types
+    ADD CONSTRAINT fk_trimandoctyp_on_document_type FOREIGN KEY (mandatory_document_types_id) REFERENCES document_type (id);
 
-ALTER TABLE voyage_organisateurs
-    ADD CONSTRAINT fk_voyorg_on_voyage FOREIGN KEY (voyage_id) REFERENCES voyage (id);
+ALTER TABLE trip_mandatory_document_types
+    ADD CONSTRAINT fk_trimandoctyp_on_trip FOREIGN KEY (trip_id) REFERENCES trip (id);
 
-ALTER TABLE voyage_participants
-    ADD CONSTRAINT fk_voypar_on_voyage FOREIGN KEY (voyage_id) REFERENCES voyage (id);
+ALTER TABLE trip_sectors
+    ADD CONSTRAINT fk_trip_sectors_on_trip FOREIGN KEY (trip_id) REFERENCES trip (id);
 
-ALTER TABLE voyage_participants
-    ADD CONSTRAINT fk_voypar_on_voyage_participant FOREIGN KEY (participants_id) REFERENCES voyage_participant (id);
+ALTER TABLE trip_participants
+    ADD CONSTRAINT fk_tripar_on_trip FOREIGN KEY (trip_id) REFERENCES trip (id);
 
-ALTER TABLE voyage_sections
-    ADD CONSTRAINT fk_voysec_on_section FOREIGN KEY (sections_id) REFERENCES section (id);
+ALTER TABLE trip_participants
+    ADD CONSTRAINT fk_tripar_on_trip_participant FOREIGN KEY (participants_id) REFERENCES trip_participant (id);
 
-ALTER TABLE voyage_sections
-    ADD CONSTRAINT fk_voysec_on_voyage FOREIGN KEY (voyage_id) REFERENCES voyage (id);
+ALTER TABLE trip_sections
+    ADD CONSTRAINT fk_trisec_on_section FOREIGN KEY (sections_id) REFERENCES section (id);
+
+ALTER TABLE trip_sections
+    ADD CONSTRAINT fk_trisec_on_trip FOREIGN KEY (trip_id) REFERENCES trip (id);
