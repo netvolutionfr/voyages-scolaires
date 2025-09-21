@@ -9,7 +9,6 @@ import fr.siovision.voyages.infrastructure.dto.SectionDTO;
 import fr.siovision.voyages.infrastructure.mapper.SectionMapper;
 import fr.siovision.voyages.infrastructure.repository.ParticipantRepository;
 import fr.siovision.voyages.infrastructure.repository.SectionRepository;
-import fr.siovision.voyages.infrastructure.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
