@@ -24,7 +24,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ParticipantService {
     private final ParticipantRepository participantRepository;
-    private final UserRepository userRepository;
     private final CurrentUserService currentUserService;
     private final AuthorizationService authorizationService;
     private final SectionRepository sectionRepository;

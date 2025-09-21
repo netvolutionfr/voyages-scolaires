@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 @RestController
 @RequestMapping("/api/sections")
@@ -41,10 +42,9 @@ public class SectionController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
-    public ResponseEntity<Long> createSection(@RequestBody SectionDTO sectionDTO) {
+    public ResponseEntity<Void> createSection(@RequestBody SectionDTO sectionDTO) {
         SectionDTO created = sectionService.createSection(sectionDTO);
-        final ResponseEntity<Long> body = ResponseEntity.status(HttpStatus.CREATED).body(created.getId());
-        return body;
+        return ResponseEntity.created(ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(created.getId()).toUri()).build();
     }
 
     @PreAuthorize("hasRole('ADMIN')")
