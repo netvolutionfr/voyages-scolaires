@@ -90,7 +90,13 @@ CREATE TABLE section
     public_id   UUID   NOT NULL,
     label       VARCHAR(255),
     description VARCHAR(255),
-    CONSTRAINT pk_section PRIMARY KEY (id)
+    cycle       VARCHAR(32),
+    is_active   BOOLEAN,
+    year        VARCHAR(16),
+    created_at  TIMESTAMP WITHOUT TIME ZONE,
+    updated_at  TIMESTAMP WITHOUT TIME ZONE,
+    CONSTRAINT pk_section PRIMARY KEY (id),
+    CONSTRAINT ux_section_label UNIQUE (label)
 );
 
 CREATE TABLE trip
@@ -264,6 +270,12 @@ ALTER TABLE participant
 
 ALTER TABLE participant
     ADD CONSTRAINT FK_PARTICIPANT_ON_STUDENT_USER FOREIGN KEY (student_user_id) REFERENCES users (id);
+
+CREATE INDEX ix_section_active ON section (is_active);
+
+CREATE INDEX ix_section_cycle ON section (cycle);
+
+CREATE INDEX ix_section_year ON section (year);
 
 ALTER TABLE trip_participant
     ADD CONSTRAINT FK_TRIPPARTICIPANT_ON_PARTICIPANT FOREIGN KEY (participant_id) REFERENCES participant (id);

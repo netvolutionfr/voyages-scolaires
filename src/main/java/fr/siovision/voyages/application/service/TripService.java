@@ -3,6 +3,7 @@ package fr.siovision.voyages.application.service;
 
 import fr.siovision.voyages.domain.model.*;
 import fr.siovision.voyages.infrastructure.dto.*;
+import fr.siovision.voyages.infrastructure.mapper.SectionMapper;
 import fr.siovision.voyages.infrastructure.repository.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class TripService {
     private final SectionRepository sectionRepository;
     private final CurrentUserService currentUserService;
     private final TripPreferenceService tripPreferenceService;
+    private final SectionMapper sectionMapper;
 
     // Méthode pour créer un nouveau voyage
     @Transactional
@@ -173,12 +175,7 @@ public class TripService {
                 ))
                 .toList();
         List<SectionDTO> sections = trip.getSections().stream()
-                .map(sec -> new SectionDTO(
-                        sec.getId(),
-                        sec.getPublicId(),
-                        sec.getLabel(),
-                        sec.getDescription()
-                ))
+                .map(sectionMapper::toDTO)
                 .toList();
 
         DateRangeDTO datesInscription = new DateRangeDTO(
@@ -296,12 +293,7 @@ public class TripService {
                 ))
                 .toList();
         List<SectionDTO> sections = trip.getSections().stream()
-                .map(sec -> new SectionDTO(
-                        sec.getId(),
-                        sec.getPublicId(),
-                        sec.getLabel(),
-                        sec.getDescription()
-                ))
+                .map(sectionMapper::toDTO)
                 .toList();
 
         Long interestedCount = tripPreferenceService.countInterestedUsers(trip.getId());
