@@ -8,20 +8,28 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
+import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.lang.NonNull;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.webauthn.management.JdbcPublicKeyCredentialUserEntityRepository;
+import org.springframework.security.web.webauthn.management.JdbcUserCredentialRepository;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.util.List;
+import java.util.Map;
 
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
-
     // -------- Actuator isolation ----------
     @Order(0)
     @Bean
@@ -43,15 +51,11 @@ public class SecurityConfig {
     @Profile("dev")
     public SecurityFilterChain devSecurityChain(HttpSecurity http) throws Exception {
         http
-                // CSRF requis pour /webauthn/* (POST)
-                .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .ignoringRequestMatchers("/api/auth/**") // Pas de CSRF sur ces endpoints
-                )
+                .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> corsConfigurer())
                 .authorizeHttpRequests(auth -> auth
                         // Passkeys/WebAuthn
-                        .requestMatchers("/webauthn/**").permitAll()
+                        .requestMatchers("/api/webauthn/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
 
                         // Docs
@@ -68,32 +72,19 @@ public class SecurityConfig {
                         .requestMatchers("/api/files/**").hasAnyRole("ADMIN","TEACHER")
                         .requestMatchers("/api/admin/**").hasAnyRole("ADMIN")
                         .requestMatchers("/**").authenticated()
-                )
-                // Activation Passkeys (Spring Security)
-                .webAuthn(wa -> wa
-                                .rpName("Campus Away")
-                                .rpId("campusaway.fr")
-                        // .allowedOrigins("https://campusaway.fr","https://www.campusaway.fr")
                 );
 
         return http.build();
     }
 
-    @Order(1)
     @Bean
-    @Profile("dev")
-    public CookieCsrfTokenRepository csrfTokenRepository() {
-        CookieCsrfTokenRepository repository = new CookieCsrfTokenRepository();
+    JdbcPublicKeyCredentialUserEntityRepository jdbcPublicKeyCredentialRepository(JdbcOperations jdbc) {
+        return new JdbcPublicKeyCredentialUserEntityRepository(jdbc);
+    }
 
-        // Nouvelle méthode pour configurer le cookie de manière personnalisée
-        repository.setCookieCustomizer(builder ->
-                builder
-                        .sameSite("None") // Définition de la politique SameSite
-                        .secure(true)     // Requis avec SameSite=None
-                        .httpOnly(false)  // Permet au JS de lire le cookie
-        );
-
-        return repository;
+    @Bean
+    JdbcUserCredentialRepository jdbcUserCredentialRepository(JdbcOperations jdbc) {
+        return new JdbcUserCredentialRepository(jdbc);
     }
 
     // -------- PROD profile ----------
@@ -102,12 +93,10 @@ public class SecurityConfig {
     @Profile("!dev")
     public SecurityFilterChain prodSecurityChain(HttpSecurity http) throws Exception {
         http
-                // On laisse CSRF actif (requis pour /webauthn/*).
-                // Si ton SPA est même domaine, pas besoin de CookieCsrfTokenRepo lisible.
-                .csrf(Customizer.withDefaults())
-                .cors(AbstractHttpConfigurer::disable) // géré par le proxy frontal
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(AbstractHttpConfigurer::disable) // CORS géré par le proxy frontal (Nginx, Apache, autre) ou api dans le même domaine
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/webauthn/**").permitAll()
+                        .requestMatchers("/api/webauthn/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**","/v3/api-docs/**","/swagger-ui.html").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -117,28 +106,44 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasAnyRole("ADMIN")
                         .requestMatchers("/**").authenticated()
                 )
-                // Pas de formulaire ni basic auth
-                .formLogin(AbstractHttpConfigurer::disable)
-                .httpBasic(AbstractHttpConfigurer::disable)
-                // Active la config Passkeys / WebAuthn
-                .webAuthn(wa -> wa
-                        .rpName("Campus Away")
-                        .rpId("campusaway.fr")
-                );
+        ;
 
         return http.build();
     }
 
-    // -------- CORS DEV ----------
+    @Bean
+    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+
+        converter.setJwtGrantedAuthoritiesConverter((Jwt jwt) -> {
+            Object realmAccess = jwt.getClaim("realm_access");
+
+            if (realmAccess instanceof Map<?, ?> map && map.get("roles") instanceof List<?> rolesList) {
+
+                return rolesList.stream()
+                        .filter(String.class::isInstance)
+                        .map(role -> new SimpleGrantedAuthority("ROLE_" + ((String) role).toUpperCase()))
+                        .map(granted -> (GrantedAuthority) granted) // <-- assure le bon type
+                        .toList();
+            }
+
+            return List.of();
+        });
+
+        return converter;
+    }
+
     @Bean
     @Profile("dev")
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(@NonNull CorsRegistry registry) {
-                registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:5173","http://localhost:3000","https://campusaway.fr")
-                        .allowedMethods("GET","POST","PUT","DELETE","PATCH","OPTIONS")
+                registry.addMapping("/api/**")
+                        .allowedOrigins(
+                                "http://localhost:3000",
+                                "http://localhost:5173")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);
             }

@@ -38,6 +38,9 @@ public class User {
     @Enumerated(EnumType.STRING)
     UserRole role; // PARENT, STUDENT, ADMIN
 
+    @Enumerated(EnumType.STRING)
+    UserStatus status; // ACTIVE, INACTIVE, PENDING
+
     LocalDate consentGivenAt;
     String consentText;
 
