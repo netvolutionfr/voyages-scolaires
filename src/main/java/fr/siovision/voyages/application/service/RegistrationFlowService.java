@@ -6,5 +6,5 @@ import jakarta.validation.Valid;
 import org.springframework.stereotype.Service;
 
 public interface RegistrationFlowService {
-    RegisterFinishResponse finish(@Valid RegisterFinishRequest req);
+    RegisterFinishResponse finishRegistration(@Valid RegisterFinishRequest req);
 }

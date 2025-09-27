@@ -34,5 +34,4 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     Page<User> findByRoleIn(List<UserRole> roles, Pageable pageable);
 
-    void updateStatus(User user, UserStatus userStatus);
 }

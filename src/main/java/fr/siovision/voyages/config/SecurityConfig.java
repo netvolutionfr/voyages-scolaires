@@ -76,17 +76,6 @@ public class SecurityConfig {
 
         return http.build();
     }
-
-    @Bean
-    JdbcPublicKeyCredentialUserEntityRepository jdbcPublicKeyCredentialRepository(JdbcOperations jdbc) {
-        return new JdbcPublicKeyCredentialUserEntityRepository(jdbc);
-    }
-
-    @Bean
-    JdbcUserCredentialRepository jdbcUserCredentialRepository(JdbcOperations jdbc) {
-        return new JdbcUserCredentialRepository(jdbc);
-    }
-
     // -------- PROD profile ----------
     @Order(1)
     @Bean

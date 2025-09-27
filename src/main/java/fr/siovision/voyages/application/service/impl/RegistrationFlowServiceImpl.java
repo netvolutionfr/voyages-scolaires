@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class RegistrationFlowServiceImpl implements RegistrationFlowService {
     @Override
-    public RegisterFinishResponse finish(RegisterFinishRequest req) {
+    public RegisterFinishResponse finishRegistration(RegisterFinishRequest req) {
         /* TODO: Implement registration flow finish logic here */
         return null;
     }
