@@ -1,7 +1,10 @@
 package fr.siovision.voyages.domain.model;
 
+import com.webauthn4j.credential.CredentialRecord;
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Type;
 
 import java.time.LocalDateTime;
 
@@ -21,16 +24,9 @@ public class WebAuthnCredential {
     @JoinColumn(name = "user_id")
     private User user; // nullable pendant l’inscription si tu veux stocker “orphelin”, sinon lie seulement si autorisé
 
-    @Column(unique = true, nullable = false)
-    private String credentialId; // base64url, unique
-
-    @Column(nullable = false)
-    private byte[] publicKeyCose;
-
-    @Column(nullable = false)
-    private long signCount;
-    private String aaguid; // UUID as String
-    private String transports; // csv
+    @Type(JsonBinaryType.class)
+    @Column(columnDefinition = "jsonb")
+    private CredentialRecord credentialRecord;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

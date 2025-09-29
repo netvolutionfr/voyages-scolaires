@@ -131,7 +131,8 @@ public class SecurityConfig {
                 registry.addMapping("/api/**")
                         .allowedOrigins(
                                 "http://localhost:3000",
-                                "http://localhost:5173")
+                                "http://localhost:5173",
+                                "http://localhost:63343")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);

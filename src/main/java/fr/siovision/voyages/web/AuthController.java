@@ -1,5 +1,6 @@
 package fr.siovision.voyages.web;
 
+import com.webauthn4j.data.PublicKeyCredentialCreationOptions;
 import fr.siovision.voyages.infrastructure.dto.authentication.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,7 @@ public class AuthController {
     private final AuthenticationService authenticationService;
 
     @GetMapping("/auth/challenge")
-    ChallengeResponse challenge() {
+    PublicKeyCredentialCreationOptions challenge() {
         return challengeService.issue();
     }
 
