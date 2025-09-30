@@ -7,6 +7,6 @@ import fr.siovision.voyages.infrastructure.dto.authentication.JwtResponse;
 import jakarta.validation.Valid;
 
 public interface AuthenticationService {
-    AuthnOptionsResponse options(EmailHint req);
     JwtResponse finish(AuthnFinishRequest req);
+    AuthnOptionsResponse options(EmailHint req);
 }

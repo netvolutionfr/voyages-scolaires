@@ -6,6 +6,8 @@ import fr.siovision.voyages.domain.model.UserRole;
 import fr.siovision.voyages.domain.model.UserStatus;
 import fr.siovision.voyages.infrastructure.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
@@ -50,9 +52,13 @@ public class JwtServiceImpl implements JwtService {
                 .issuedAt(now)
                 .expiresAt(now.plusSeconds(expiry))
                 .subject(user.getEmail())
-                .claim("role",  user.getRole())
+                .claim("role",  role)
                 .build();
 
-        return this.encoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+        JwsHeader jws = JwsHeader.with(MacAlgorithm.HS256)
+                .type("JWT")
+                .build();
+
+        return this.encoder.encode(JwtEncoderParameters.from(jws, claims)).getTokenValue();
     }
 }

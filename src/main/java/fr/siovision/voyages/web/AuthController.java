@@ -2,6 +2,7 @@ package fr.siovision.voyages.web;
 
 import com.webauthn4j.data.PublicKeyCredentialCreationOptions;
 import fr.siovision.voyages.infrastructure.dto.authentication.*;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
@@ -11,7 +12,6 @@ import fr.siovision.voyages.application.service.AuthenticationService;
 import fr.siovision.voyages.application.service.ChallengeService;
 import fr.siovision.voyages.application.service.OtpService;
 import fr.siovision.voyages.application.service.RegistrationFlowService;
-
 
 @Validated
 @RestController
@@ -23,14 +23,16 @@ public class AuthController {
     private final OtpService otpService;
     private final AuthenticationService authenticationService;
 
-    @GetMapping("/auth/challenge")
-    PublicKeyCredentialCreationOptions challenge() {
-        return challengeService.issue();
+    @PostMapping("/webauthn/register/options")
+    PublicKeyCredentialCreationOptions challenge(@Valid @RequestBody EmailHint req, HttpServletRequest httpRequest) {
+        String origin = httpRequest.getHeader("Origin");
+        return challengeService.issue(req.email(), origin);
     }
 
     @PostMapping("/webauthn/register/finish")
-    RegisterFinishResponse finishRegister(@Valid @RequestBody RegisterFinishRequest req) {
-        return registrationFlowService.finishRegistration(req);
+    RegisterFinishResponse finishRegister(@Valid @RequestBody String registrationRequest, HttpServletRequest httpRequest) {
+        String origin = httpRequest.getHeader("Origin");
+        return registrationFlowService.finishRegistration(registrationRequest, origin);
     }
 
     @PostMapping("/auth/verify-otp")

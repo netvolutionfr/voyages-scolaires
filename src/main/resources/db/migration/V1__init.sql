@@ -84,19 +84,33 @@ CREATE TABLE participant_documents
     documents_id   BIGINT NOT NULL
 );
 
+CREATE TABLE registration_attempt
+(
+    id         BIGINT  NOT NULL,
+    uuid       UUID,
+    challenge  BYTEA,
+    email_hint VARCHAR(255),
+    rp_id      VARCHAR(255),
+    origin     VARCHAR(255),
+    expires_at TIMESTAMP WITHOUT TIME ZONE,
+    used       BOOLEAN NOT NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE,
+    updated_at TIMESTAMP WITHOUT TIME ZONE,
+    CONSTRAINT pk_registrationattempt PRIMARY KEY (id)
+);
+
 CREATE TABLE section
 (
-    id          BIGINT NOT NULL,
-    public_id   UUID   NOT NULL,
+    id          BIGINT      NOT NULL,
+    public_id   UUID        NOT NULL,
     label       VARCHAR(255),
     description VARCHAR(255),
-    cycle       VARCHAR(32),
-    is_active   BOOLEAN,
-    year        VARCHAR(16),
+    cycle       VARCHAR(32) NOT NULL,
+    year        VARCHAR(16) NOT NULL,
+    is_active   BOOLEAN     NOT NULL,
     created_at  TIMESTAMP WITHOUT TIME ZONE,
     updated_at  TIMESTAMP WITHOUT TIME ZONE,
-    CONSTRAINT pk_section PRIMARY KEY (id),
-    CONSTRAINT ux_section_label UNIQUE (label)
+    CONSTRAINT pk_section PRIMARY KEY (id)
 );
 
 CREATE TABLE trip
@@ -117,6 +131,7 @@ CREATE TABLE trip
     registration_closing_date date,
     poll                      BOOLEAN,
     cover_photo_url           VARCHAR(255),
+    created_at                TIMESTAMP WITHOUT TIME ZONE,
     updated_at                TIMESTAMP WITHOUT TIME ZONE,
     CONSTRAINT pk_trip PRIMARY KEY (id)
 );
@@ -203,11 +218,26 @@ CREATE TABLE users
     first_name       VARCHAR(255),
     telephone        VARCHAR(255),
     role             VARCHAR(255),
+    status           VARCHAR(255),
     consent_given_at date,
     consent_text     VARCHAR(255),
     created_at       TIMESTAMP WITHOUT TIME ZONE,
     updated_at       TIMESTAMP WITHOUT TIME ZONE,
     CONSTRAINT pk_users PRIMARY KEY (id)
+);
+
+CREATE TABLE web_authn_credential
+(
+    id              BIGINT NOT NULL,
+    user_id         BIGINT,
+    credential_id   BYTEA,
+    public_key      BYTEA,
+    signature_count BIGINT NOT NULL,
+    user_handle     BYTEA,
+    aaguid          VARCHAR(255),
+    created_at      TIMESTAMP WITHOUT TIME ZONE,
+    updated_at      TIMESTAMP WITHOUT TIME ZONE,
+    CONSTRAINT pk_webauthncredential PRIMARY KEY (id)
 );
 
 ALTER TABLE trip_preferences
@@ -221,6 +251,9 @@ ALTER TABLE participant_documents
 
 ALTER TABLE participant
     ADD CONSTRAINT uc_participant_publicid UNIQUE (public_id);
+
+ALTER TABLE registration_attempt
+    ADD CONSTRAINT uc_registrationattempt_uuid UNIQUE (uuid);
 
 ALTER TABLE section
     ADD CONSTRAINT uc_section_publicid UNIQUE (public_id);
@@ -239,6 +272,15 @@ ALTER TABLE users
 
 ALTER TABLE participant
     ADD CONSTRAINT uk_participant_student_user UNIQUE (student_user_id);
+
+ALTER TABLE section
+    ADD CONSTRAINT ux_section_label UNIQUE (label);
+
+CREATE INDEX ix_section_active ON section (is_active);
+
+CREATE INDEX ix_section_cycle ON section (cycle);
+
+CREATE INDEX ix_section_year ON section (year);
 
 ALTER TABLE country_formality_templates
     ADD CONSTRAINT FK_COUNTRY_FORMALITY_TEMPLATES_ON_COUNTRY FOREIGN KEY (country_id) REFERENCES country (id);
@@ -271,12 +313,6 @@ ALTER TABLE participant
 ALTER TABLE participant
     ADD CONSTRAINT FK_PARTICIPANT_ON_STUDENT_USER FOREIGN KEY (student_user_id) REFERENCES users (id);
 
-CREATE INDEX ix_section_active ON section (is_active);
-
-CREATE INDEX ix_section_cycle ON section (cycle);
-
-CREATE INDEX ix_section_year ON section (year);
-
 ALTER TABLE trip_participant
     ADD CONSTRAINT FK_TRIPPARTICIPANT_ON_PARTICIPANT FOREIGN KEY (participant_id) REFERENCES participant (id);
 
@@ -304,6 +340,9 @@ ALTER TABLE trip_preferences
 
 ALTER TABLE trip_preferences
     ADD CONSTRAINT FK_TRIP_PREFERENCES_ON_USER FOREIGN KEY (user_id) REFERENCES users (id);
+
+ALTER TABLE web_authn_credential
+    ADD CONSTRAINT FK_WEBAUTHNCREDENTIAL_ON_USER FOREIGN KEY (user_id) REFERENCES users (id);
 
 ALTER TABLE participant_documents
     ADD CONSTRAINT fk_pardoc_on_document FOREIGN KEY (documents_id) REFERENCES document (id);

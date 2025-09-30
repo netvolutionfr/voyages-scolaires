@@ -77,7 +77,6 @@ public class Trip {
     @Formula("(select count(tp.id) from trip_preferences tp where tp.trip_id = id)")
     private long interestedCount;
 
-    @Transient
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

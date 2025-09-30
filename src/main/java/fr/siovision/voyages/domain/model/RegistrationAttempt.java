@@ -32,7 +32,6 @@ public class RegistrationAttempt {
     private Instant expiresAt;
     private boolean used;
 
-    @Transient
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

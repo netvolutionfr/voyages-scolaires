@@ -47,7 +47,6 @@ public class Section {
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
 
-    @Transient
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

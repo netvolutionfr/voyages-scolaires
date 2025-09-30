@@ -1,12 +1,14 @@
 package fr.siovision.voyages.domain.model;
 
-import com.webauthn4j.credential.CredentialRecord;
-import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import com.webauthn4j.data.RegistrationData;
+import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
+import com.webauthn4j.data.attestation.authenticator.AuthenticatorData;
+import com.webauthn4j.data.extension.authenticator.RegistrationExtensionAuthenticatorOutput;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.Type;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 @Getter
@@ -22,12 +24,36 @@ public class WebAuthnCredential {
 
     @ManyToOne
     @JoinColumn(name = "user_id")
-    private User user; // nullable pendant l’inscription si tu veux stocker “orphelin”, sinon lie seulement si autorisé
+    private User user;
 
-    @Type(JsonBinaryType.class)
-    @Column(columnDefinition = "jsonb")
-    private CredentialRecord credentialRecord;
+    @Column(columnDefinition = "bytea")
+    private byte[] credentialId;
 
+    @Column(columnDefinition = "bytea")
+    private byte[] publicKey;
+
+    private long signatureCount;
+
+    @Column(columnDefinition = "bytea")
+    private byte[] userHandle;
+
+    // --- Champs pour la traçabilité ---
+    private String aaguid;
+
+    // --- Constructeur pour la persistance ---
+    public WebAuthnCredential(User user, RegistrationData registrationData) {
+        this.user = user;
+
+        assert registrationData.getAttestationObject() != null;
+        AttestedCredentialData attestedCredentialData = registrationData.getAttestationObject().getAuthenticatorData().getAttestedCredentialData();
+        assert attestedCredentialData != null;
+        this.credentialId = attestedCredentialData.getCredentialId();
+        this.publicKey = Objects.requireNonNull(attestedCredentialData.getCOSEKey().getPublicKey()).getEncoded();
+        AuthenticatorData<RegistrationExtensionAuthenticatorOutput> authenticatorData = registrationData.getAttestationObject().getAuthenticatorData();
+        this.signatureCount = authenticatorData.getSignCount();
+        this.userHandle = user.getPublicId().toString().getBytes(); // Assumer que user.getPublicId() est une chaîne unique pour l'utilisateur
+        this.aaguid = attestedCredentialData.getAaguid().toString();
+    }
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
