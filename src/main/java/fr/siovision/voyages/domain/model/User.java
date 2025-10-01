@@ -33,6 +33,7 @@ public class User {
     String email; // email de l'utilisateur, utilisé pour l'authentification
     String lastName; // nom de famille de l'utilisateur
     String firstName; // prénom de l'utilisateur
+    String displayName; // nom complet affiché (prénom + nom) utilisé par iOS lors de la création de passkey
     String telephone;
 
     @Enumerated(EnumType.STRING)

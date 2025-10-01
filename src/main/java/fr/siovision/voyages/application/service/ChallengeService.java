@@ -8,10 +8,11 @@ import fr.siovision.voyages.domain.model.RegistrationAttempt;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 public interface ChallengeService {
-    public PublicKeyCredentialCreationOptions issue(String email, String rpOrigin);
+    PublicKeyCredentialCreationOptions issue(String email, String rpOrigin);
+
+    PublicKeyCredentialCreationOptions issueIOS(String origin);
 
     Optional<RegistrationAttempt> getChallenge(Challenge myChallenge);
 
@@ -20,4 +21,5 @@ public interface ChallengeService {
     AuthenticatorSelectionCriteria getAuthenticatorSelectionCriteria();
 
     void invalidateChallenge(RegistrationAttempt attempt);
+
 }

@@ -23,10 +23,24 @@ public class AuthController {
     private final OtpService otpService;
     private final AuthenticationService authenticationService;
 
+    // Pour iOS 26+, requête de création de passkey sans email
+    @GetMapping("/webauthn/register/options")
+    PublicKeyCredentialCreationOptions challengeIOS(HttpServletRequest httpRequest) {
+        String origin = httpRequest.getHeader("Origin");
+        return challengeService.issueIOS(origin);
+    }
+
+    // Pour les autres plateformes, requête de création de passkey avec email
     @PostMapping("/webauthn/register/options")
     PublicKeyCredentialCreationOptions challenge(@Valid @RequestBody EmailHint req, HttpServletRequest httpRequest) {
         String origin = httpRequest.getHeader("Origin");
         return challengeService.issue(req.email(), origin);
+    }
+
+    @PostMapping("/webauthn/register/finish-onestep")
+    RegisterFinishResponse finishRegisterOneStep(@Valid @RequestBody RegisterFinishRequest registerFinishRequest, HttpServletRequest httpRequest) {
+        String origin = httpRequest.getHeader("Origin");
+        return registrationFlowService.finishRegistrationOneStep(registerFinishRequest, origin);
     }
 
     @PostMapping("/webauthn/register/finish")

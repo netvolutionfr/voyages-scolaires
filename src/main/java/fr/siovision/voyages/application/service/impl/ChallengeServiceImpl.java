@@ -80,23 +80,59 @@ public class ChallengeServiceImpl implements ChallengeService {
 
         // 4. Paramètres de la Passkey (clé découvrable par défaut)
 
+        return getPublicKeyCredentialCreationOptions(chal, rpEntity, userEntity);
+    }
+
+    @Override @Transactional
+    public PublicKeyCredentialCreationOptions issueIOS(String rpOrigin) {
+
+        if (!rpOrigins.contains(rpOrigin)) {
+            throw new IllegalArgumentException("Origin non autorisée: " + rpOrigin);
+        }
+
+        UUID uuid = UUID.randomUUID();
+        byte[] chal = new byte[32]; rng.nextBytes(chal);
+        var att = new RegistrationAttempt();
+        att.setUuid(uuid);
+        att.setChallenge(chal);
+        att.setRpId(rpId);
+        att.setOrigin(rpOrigin);
+        att.setExpiresAt(Instant.now().plusSeconds(challengeTtlSeconds));
+        att.setUsed(false);
+        attempts.save(att);
+
+        // Entités
+        PublicKeyCredentialRpEntity rpEntity = new PublicKeyCredentialRpEntity(rpId, rpName);
+        PublicKeyCredentialUserEntity userEntity = new PublicKeyCredentialUserEntity(
+                uuid.toString().getBytes(),
+                uuid.toString(),
+                ""
+        );
+
+        // 4. Paramètres de la Passkey (clé découvrable par défaut)
+
+        return getPublicKeyCredentialCreationOptions(chal, rpEntity, userEntity);
+    }
+
+    private PublicKeyCredentialCreationOptions getPublicKeyCredentialCreationOptions(byte[] chal, PublicKeyCredentialRpEntity rpEntity, PublicKeyCredentialUserEntity userEntity) {
         AuthenticatorSelectionCriteria authenticatorSelection = this.getAuthenticatorSelectionCriteria();
         List<PublicKeyCredentialParameters> pubKeyCredParams = this.getPubKeyCredParams();
         Challenge challenge = new DefaultChallenge(chal);
 
         return new PublicKeyCredentialCreationOptions(
-                    rpEntity, // Relying Party
-                    userEntity, // Utilisateur
-                    challenge, // Challenge
-                    pubKeyCredParams, // Types de clés publiques acceptées
-                    challengeTtlSeconds * 1000, // Timeout en ms
-                    List.of(), // ExcludeCredentials (vide ici, car pas de clés existantes à exclure)
-                    authenticatorSelection, // Critères de sélection de l'authentificateur
-                    List.of(), // Hints d'authentificateurs (vide ici)
-                    AttestationConveyancePreference.NONE, // Pas besoin d'attestation
-                    null // Pas d'extensions supplémentaires
-                );
+                rpEntity, // Relying Party
+                userEntity, // Utilisateur
+                challenge, // Challenge
+                pubKeyCredParams, // Types de clés publiques acceptées
+                challengeTtlSeconds * 1000, // Timeout en ms
+                List.of(), // ExcludeCredentials (vide ici, car pas de clés existantes à exclure)
+                authenticatorSelection, // Critères de sélection de l'authentificateur
+                List.of(), // Hints d'authentificateurs (vide ici)
+                AttestationConveyancePreference.NONE, // Pas besoin d'attestation
+                null // Pas d'extensions supplémentaires
+        );
     }
+
 
     public AuthenticatorSelectionCriteria getAuthenticatorSelectionCriteria() {
         return new AuthenticatorSelectionCriteria(
