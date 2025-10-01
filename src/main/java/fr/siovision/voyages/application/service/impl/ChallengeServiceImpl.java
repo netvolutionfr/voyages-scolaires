@@ -10,11 +10,13 @@ import fr.siovision.voyages.infrastructure.repository.RegistrationAttemptReposit
 import fr.siovision.voyages.infrastructure.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import com.webauthn4j.data.*;
 
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -124,5 +126,21 @@ public class ChallengeServiceImpl implements ChallengeService {
         RegistrationAttempt attempt = attempts.findByChallenge(myChallenge.getValue())
                 .orElseThrow(() -> new IllegalArgumentException("Challenge not found"));
         return Optional.ofNullable(attempt);
+    }
+
+    /**
+     * Tâche planifiée pour purger les challenges expirés.
+     * La tâche est exécutée toutes les 10 minutes (600 000 ms).
+     */
+    @Transactional // Nécessaire si vous effectuez des opérations de BDD
+    @Scheduled(fixedRate = 600000) // 600000 millisecondes = 10 minutes
+    // OU @Scheduled(cron = "0 0/10 * * * ?") pour une expression Cron
+    public void cleanupExpiredChallenges() {
+        LocalDateTime expirationThreshold = LocalDateTime.now().minusMinutes(15);
+
+        // C'est ici que vous appelez votre repository
+        int deletedCount = attempts.deleteByCreatedAtBefore(expirationThreshold);
+
+        System.out.println("Purge de challenges terminée. " + deletedCount + " enregistrements supprimés.");
     }
 }

@@ -4,6 +4,7 @@ import fr.siovision.voyages.domain.model.RegistrationAttempt;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.Optional;
 
@@ -11,4 +12,6 @@ public interface RegistrationAttemptRepository extends JpaRepository<Registratio
     Optional<RegistrationAttempt> findByUuid(UUID id);
 
      Optional<RegistrationAttempt> findByChallenge(@NotNull byte[] value);
+
+    int deleteByCreatedAtBefore(LocalDateTime expirationThreshold);
 }

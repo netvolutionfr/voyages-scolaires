@@ -44,15 +44,20 @@ public class JwtServiceImpl implements JwtService {
             role = user.getRole().toString();
         }
 
+        // Issuer : get server name from application.properties
+        String issuer = "self";
 
         // Génération du JWT
         // Construction des 'claims' (payload)
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("self")
+                .issuer(issuer)
                 .issuedAt(now)
                 .expiresAt(now.plusSeconds(expiry))
-                .subject(user.getEmail())
+                .subject(user.getPublicId().toString())
                 .claim("role",  role)
+                .claim("email", user.getEmail())
+                .claim("firstName", user.getFirstName())
+                .claim("lastName", user.getLastName())
                 .build();
 
         JwsHeader jws = JwsHeader.with(MacAlgorithm.HS256)
