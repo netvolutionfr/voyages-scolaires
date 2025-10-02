@@ -26,7 +26,6 @@ import com.webauthn4j.data.client.Origin;
 import com.webauthn4j.server.ServerProperty;
 import com.webauthn4j.data.client.challenge.Challenge;
 
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import fr.siovision.voyages.domain.model.User;
@@ -174,6 +173,7 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
         // 2) Récupérer le challenge dans registration_attempt
         assert regData.getCollectedClientData() != null;
         Challenge expectedChallenge = regData.getCollectedClientData().getChallenge();
+        log.info("Expected challenge: {}", expectedChallenge.getValue());
         RegistrationAttempt attempt = regChallengeService.getChallenge(expectedChallenge)
                 .orElseThrow(() -> new IllegalStateException("Challenge de registration introuvable"));
 
