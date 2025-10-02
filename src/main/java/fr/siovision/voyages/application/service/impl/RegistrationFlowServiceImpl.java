@@ -14,6 +14,7 @@ import fr.siovision.voyages.infrastructure.repository.WebAuthnCredentialReposito
 
 import lombok.RequiredArgsConstructor;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class RegistrationFlowServiceImpl implements RegistrationFlowService {
 
     private final UserRepository userRepository;
@@ -127,6 +129,7 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
     public RegisterFinishResponse finishRegistrationOneStep(RegisterFinishRequest registerFinishRequest, String appOrigin) {
         String originValue;
 
+        log.info("RegisterFinishRequest: {}", registerFinishRequest);
         String registrationRequest = registerFinishRequest.registrationRequest();
         String email = registerFinishRequest.email();
         String displayName = registerFinishRequest.displayName();

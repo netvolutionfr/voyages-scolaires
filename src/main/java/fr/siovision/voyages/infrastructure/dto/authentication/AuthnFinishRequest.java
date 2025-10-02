@@ -8,11 +8,22 @@ package fr.siovision.voyages.infrastructure.dto.authentication;
 //        "userHandle": "Base64UrlOrNull"
 //        }
 
+import jakarta.validation.constraints.NotNull;
+
 public record AuthnFinishRequest(
-    String id,
-    String authenticatorData,
-    String clientDataJSON,
-    String signature,
-    String userHandle
+        @NotNull
+        String id,
+
+        @NotNull
+        String authenticatorData,
+
+        @NotNull
+        String clientDataJSON,
+
+        @NotNull
+        String signature,
+
+        @NotNull
+        String userHandle
 ) {
 }
