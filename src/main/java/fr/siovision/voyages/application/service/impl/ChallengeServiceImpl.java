@@ -41,6 +41,9 @@ public class ChallengeServiceImpl implements ChallengeService {
     @Value("${webauthn.allowed-origins}")
     private List<String> rpOrigins; // ex: https://app.campusaway.fr (ou http://localhost:5173 en dev)
 
+    @Value("${webauthn.default-origin}")
+    private String defaultOrigin; // ex: https://campusaway.fr
+
     public ChallengeServiceImpl(
             RegistrationAttemptRepository attempts,
             UserRepository userRepository
@@ -51,9 +54,12 @@ public class ChallengeServiceImpl implements ChallengeService {
 
     @Override @Transactional
     public PublicKeyCredentialCreationOptions issue(String email, String rpOrigin) {
+        String originValue;
 
         if (!rpOrigins.contains(rpOrigin)) {
-            throw new IllegalArgumentException("Origin non autorisée: " + rpOrigin);
+            originValue = defaultOrigin; // Utiliser l'origine par défaut si l'origine fournie n'est pas autorisée
+        } else {
+            originValue = rpOrigin;
         }
 
         UUID uuid = UUID.randomUUID();
@@ -63,7 +69,7 @@ public class ChallengeServiceImpl implements ChallengeService {
         att.setChallenge(chal);
         att.setEmailHint(email);
         att.setRpId(rpId);
-        att.setOrigin(rpOrigin);
+        att.setOrigin(originValue);
         att.setExpiresAt(Instant.now().plusSeconds(challengeTtlSeconds));
         att.setUsed(false);
         attempts.save(att);
@@ -85,9 +91,12 @@ public class ChallengeServiceImpl implements ChallengeService {
 
     @Override @Transactional
     public PublicKeyCredentialCreationOptions issueIOS(String rpOrigin) {
+        String originValue;
 
         if (!rpOrigins.contains(rpOrigin)) {
-            throw new IllegalArgumentException("Origin non autorisée: " + rpOrigin);
+            originValue = defaultOrigin; // Utiliser l'origine par défaut si l'origine fournie n'est pas autorisée
+        } else {
+            originValue = rpOrigin;
         }
 
         UUID uuid = UUID.randomUUID();
@@ -96,7 +105,7 @@ public class ChallengeServiceImpl implements ChallengeService {
         att.setUuid(uuid);
         att.setChallenge(chal);
         att.setRpId(rpId);
-        att.setOrigin(rpOrigin);
+        att.setOrigin(originValue);
         att.setExpiresAt(Instant.now().plusSeconds(challengeTtlSeconds));
         att.setUsed(false);
         attempts.save(att);

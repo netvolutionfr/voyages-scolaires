@@ -49,8 +49,12 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
     @Value("${webauthn.rp.id}")       // ex: campusaway.fr (ou localhost en dev)
     private String rpId;
 
+    @Value("${webauthn.default-origin}") // ex: https://campusaway.fr
+    private String defaultOrigin;
+
     @Override
     public RegisterFinishResponse finishRegistration(String registrationRequest, String appOrigin) {
+        String originValue;
 
         // 0) Parser et valider la requête
         RegistrationData registrationData;
@@ -61,11 +65,13 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
         }
 
         if (!allowedOrigins.contains(appOrigin)) {
-            throw new IllegalArgumentException("Origin non autorisée: " + appOrigin);
+            originValue = defaultOrigin;
+        } else {
+            originValue = appOrigin;
         }
 
         // 1) Récupérer le contexte serveur (challenge attendu + rpId + origin)
-        Origin origin = new Origin(appOrigin);
+        Origin origin = new Origin(originValue);
         String rpId = this.rpId;
 
         // 2) Récupérer le challenge dans registration_attempt
@@ -119,6 +125,7 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
 
     @Override
     public RegisterFinishResponse finishRegistrationOneStep(RegisterFinishRequest registerFinishRequest, String appOrigin) {
+        String originValue;
 
         String registrationRequest = registerFinishRequest.registrationRequest();
         String email = registerFinishRequest.email();
@@ -133,11 +140,13 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
         }
 
         if (!allowedOrigins.contains(appOrigin)) {
-            throw new IllegalArgumentException("Origin non autorisée: " + appOrigin);
+            originValue = defaultOrigin;
+        } else {
+            originValue = appOrigin;
         }
 
         // 1) Récupérer le contexte serveur (challenge attendu + rpId + origin)
-        Origin origin = new Origin(appOrigin);
+        Origin origin = new Origin(originValue);
         String rpId = this.rpId;
 
         // 2) Récupérer le challenge dans registration_attempt
