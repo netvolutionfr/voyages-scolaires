@@ -150,17 +150,16 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
         if (credentialNode == null || credentialNode.isNull()) {
             throw new IllegalArgumentException("Invalid registrationRequest: missing 'credential'");
         }
-        String credentialJson = null;
+        String credentialJson;
         try {
             credentialJson = om.writeValueAsString(credentialNode);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
 
+        log.info("Credential JSON: {}", credentialJson);
         // 2) Parser via WebAuthn4J (PAS de mapping manuel vers PublicKeyCredential<?>)
-        RegistrationData regData = webAuthnManager.parse(
-                new java.io.ByteArrayInputStream(credentialJson.getBytes(StandardCharsets.UTF_8))
-        ); // parse(...)
+        RegistrationData regData = webAuthnManager.parse(credentialJson);
 
         if (!allowedOrigins.contains(appOrigin)) {
             originValue = defaultOrigin;
