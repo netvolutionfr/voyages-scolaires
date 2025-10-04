@@ -7,16 +7,11 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import fr.siovision.voyages.domain.model.User;
 
-import java.util.UUID;
-
 @Service
 @RequiredArgsConstructor
 public class MailService {
 
     private final JavaMailSender mailSender;
-
-    @Value("${app.frontend.activation-url}")
-    private String activationBaseUrl;
 
     @Value("${spring.mail.properties.sender}")
     private String senderEmail;
