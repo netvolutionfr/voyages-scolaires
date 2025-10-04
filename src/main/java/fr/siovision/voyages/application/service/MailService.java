@@ -21,27 +21,6 @@ public class MailService {
     @Value("${spring.mail.properties.sender}")
     private String senderEmail;
 
-    public void sendActivationLink(User user) {
-        var toEmail = user.getEmail();
-        var token = UUID.randomUUID().toString();
-        var url = activationBaseUrl + "?token=" + token; // ex: http://localhost:5173/activate?token=...
-        var msg = new SimpleMailMessage();
-        msg.setTo(toEmail);
-        msg.setFrom(senderEmail);
-        msg.setSubject("Active ton compte Campus Away");
-        msg.setText("""
-                Bonjour,
-                
-                Pour créer ta Passkey et activer ton compte, clique sur ce lien :
-                %s
-                
-                Ce lien expirera bientôt. Si tu n'es pas à l'origine de cette demande, ignore simplement ce message.
-                
-                — Campus Away
-                """.formatted(url));
-        mailSender.send(msg);
-    }
-
     public void sendOtpEmail(User user, String plainCode, Long otpTtlMinutes) {
         var toEmail = user.getEmail();
 

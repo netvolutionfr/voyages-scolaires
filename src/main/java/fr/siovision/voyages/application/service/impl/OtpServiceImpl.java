@@ -5,7 +5,6 @@ import fr.siovision.voyages.application.service.MailService;
 import fr.siovision.voyages.application.service.OtpService;
 import fr.siovision.voyages.application.service.RefreshTokenService;
 import fr.siovision.voyages.domain.model.OtpToken;
-import fr.siovision.voyages.domain.model.RefreshToken;
 import fr.siovision.voyages.domain.model.User;
 import fr.siovision.voyages.infrastructure.dto.authentication.RefreshResponse;
 import fr.siovision.voyages.infrastructure.repository.OtpTokenRepository;
