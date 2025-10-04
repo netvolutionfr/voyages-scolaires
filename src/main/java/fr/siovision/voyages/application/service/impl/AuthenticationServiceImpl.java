@@ -17,8 +17,10 @@ import com.webauthn4j.verifier.exception.VerificationException;
 import fr.siovision.voyages.application.service.AuthenticationService;
 import fr.siovision.voyages.application.service.ChallengeService;
 import fr.siovision.voyages.application.service.JwtService;
+import fr.siovision.voyages.application.service.RefreshTokenService;
 import fr.siovision.voyages.domain.model.RegistrationAttempt;
 import fr.siovision.voyages.domain.model.User;
+import fr.siovision.voyages.domain.model.UserStatus;
 import fr.siovision.voyages.domain.model.WebAuthnCredential;
 import fr.siovision.voyages.infrastructure.dto.authentication.*;
 import fr.siovision.voyages.infrastructure.repository.UserRepository;
@@ -36,11 +38,11 @@ import java.util.UUID;
 @Transactional
 @RequiredArgsConstructor
 public class AuthenticationServiceImpl  implements AuthenticationService {
-    private final ObjectMapper objectMapper;
     private final WebAuthnCredentialRepository credentialRepository;
     private final UserRepository userRepository;
     private final ChallengeService challengeService;
     private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
     private final WebAuthnAuthenticationManager webAuthnManager = new WebAuthnAuthenticationManager();
 
     @Value("${webauthn.allowed-origins}")          // ex: https://app.campusaway.fr (ou http://localhost:5173 en dev)
@@ -52,8 +54,14 @@ public class AuthenticationServiceImpl  implements AuthenticationService {
     @Value("${webauthn.default-origin}") // ex: https://campusaway.fr
     private String defaultOrigin;
 
+    @Value("${app.jwt.access-ttl-seconds}")
+    long accessTtlSec;
+
+    @Value("${app.jwt.refresh-ttl-seconds}")
+    long refreshTtlSec;
+
     @Override
-    public JwtResponse finish(AuthenticationRequest req, String appOrigin) {
+    public AuthResponse finish(AuthenticationRequest req, String appOrigin) {
         // 1. Parser la requete d'authentification
         AuthenticationData authenticationData = webAuthnManager.parse(req);
 
@@ -117,9 +125,24 @@ public class AuthenticationServiceImpl  implements AuthenticationService {
                 .orElseThrow(() -> new IllegalStateException("User not found for UUID: " + userPublicId));
 
         // Créer un JWT
-        String jwt = jwtService.generateToken(user);
+        String accessToken = jwtService.generateAccessToken(user);
+        String refreshToken = refreshTokenService.issue(user);
 
-        return new JwtResponse(jwt);
+        return AuthResponse.builder()
+                .tokenType("Bearer")
+                .accessToken(accessToken)
+                .expiresIn(accessTtlSec)
+                .refreshToken(refreshToken)
+                .refreshExpiresIn(refreshTtlSec)
+                .user(AuthResponse.UserInfo.builder()
+                        .id(user.getPublicId().toString())
+                        .email(user.getEmail())
+                        .firstName(user.getFirstName())
+                        .lastName(user.getLastName())
+                        .role(user.getStatus() == UserStatus.PENDING ? "PENDING" : user.getRole().toString())
+                        .status(user.getStatus().name())
+                        .build())
+                .build();
     }
 
     private static CredentialRecord getCredentialRecord(COSEKey cose, AAGUID aaguid, WebAuthnCredential credential) {

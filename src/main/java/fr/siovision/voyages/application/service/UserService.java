@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -24,39 +25,6 @@ import java.util.Map;
 public class UserService {
 
     private final UserRepository userRepository;
-
-    @Transactional
-    public UserResponse getOrCreateUserFromToken(Jwt jwt) {
-        String keycloakId = jwt.getSubject();
-        log.info("Authenticating user with Keycloak ID: {}", keycloakId);
-        UserRole tokenRole = extractRole(jwt);
-        if (tokenRole == UserRole.UNKNOWN) {
-            log.warn("User with Keycloak ID {} has no recognized role. Assigning UNKNOWN role.", keycloakId);
-        } else {
-            log.info("User with Keycloak ID {} has role: {}", keycloakId, tokenRole);
-        }
-
-        User user = userRepository.findByKeycloakId(keycloakId).orElseGet(() -> {
-            User newuser = new User();
-            newuser.setKeycloakId(keycloakId);
-            newuser.setEmail(jwt.getClaimAsString("email"));
-            newuser.setFirstName(jwt.getClaimAsString("given_name"));
-            newuser.setLastName(jwt.getClaimAsString("family_name"));
-            newuser.setRole(tokenRole);
-            log.info("Creating new user: {}", newuser);
-            return userRepository.save(newuser);
-        });
-
-        log.info("User found or created: {}", user);
-
-        // Mise à jour éventuelle si le rôle a changé (ou est inconnu)
-        if (user.getRole() == null || user.getRole() == UserRole.UNKNOWN || user.getRole() != tokenRole) {
-            user.setRole(tokenRole);
-            user = userRepository.save(user);
-        }
-
-        return toResponse(user);
-    }
 
     private UserRole extractRole(Jwt jwt) {
         Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
@@ -131,5 +99,12 @@ public class UserService {
                 validated,
                 user.getRole() != null ? user.getRole().name() : UserRole.UNKNOWN.name()
         );
+    }
+
+    @Transactional
+    public User getUserByJwt(Jwt jwt) {
+        UUID userPublicId = jwt.getSubject() != null ? UUID.fromString(jwt.getSubject()) : null;
+        return userRepository.findByPublicId(userPublicId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userPublicId));
     }
 }

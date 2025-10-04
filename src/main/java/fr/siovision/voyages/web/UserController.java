@@ -1,9 +1,12 @@
 package fr.siovision.voyages.web;
 
 import fr.siovision.voyages.application.service.UserService;
+import fr.siovision.voyages.domain.model.User;
 import fr.siovision.voyages.domain.model.UserRole;
 import fr.siovision.voyages.infrastructure.dto.UserResponse;
 import fr.siovision.voyages.infrastructure.dto.UserTelephoneRequest;
+import fr.siovision.voyages.infrastructure.mapper.UserMapper;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -20,15 +23,17 @@ import java.util.List;
 
 @Slf4j
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api")
 public class UserController {
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
+    private final UserMapper userMapper;
 
     @GetMapping("/me")
     public ResponseEntity<UserResponse> getCurrentUser(@AuthenticationPrincipal Jwt jwt) {
-        UserResponse user = userService.getOrCreateUserFromToken(jwt);
-        return ResponseEntity.ok(user);
+        User user = userService.getUserByJwt(jwt);
+        UserResponse userResponse = userMapper.toDTO(user);
+        return ResponseEntity.ok(userResponse);
     }
 
     @PostMapping("/me")

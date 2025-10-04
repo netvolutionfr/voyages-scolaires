@@ -4,4 +4,5 @@ import fr.siovision.voyages.domain.model.User;
 
 public interface JwtService {
     String generateToken(User user);
+    String generateAccessToken(User user);
 }
