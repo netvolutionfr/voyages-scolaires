@@ -29,7 +29,7 @@ public class WebAuthnCredential {
     @Column(columnDefinition = "bytea")
     private byte[] credentialId;
 
-    @Lob @Column(columnDefinition = "bytea", nullable=false)
+    @Lob @Column(name="cose_key", columnDefinition="bytea", nullable = false)
     private byte[] coseKey;
 
     private long signatureCount;
@@ -54,8 +54,7 @@ public class WebAuthnCredential {
         this.credentialId = Objects.requireNonNull(acd.getCredentialId(), "credentialId");
 
         // COSEKey -> CBOR (à stocker en base)
-        var coseKey = Objects.requireNonNull(acd.getCOSEKey(), "COSEKey");
-        this.coseKey = objectConverter.getCborConverter().writeValueAsBytes(coseKey);
+        this.coseKey = objectConverter.getCborConverter().writeValueAsBytes(acd.getCOSEKey());
 
         // Compteur initial
         this.signatureCount = authData.getSignCount();
