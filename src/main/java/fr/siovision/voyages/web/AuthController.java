@@ -80,7 +80,7 @@ public class AuthController {
         return authenticationService.finish(AuthenticationRequest , appOrigin);
     }
 
-    @PostMapping("/api/auth/refresh")
+    @PostMapping("/auth/refresh")
     public ResponseEntity<RefreshResponse> refresh(@RequestBody RefreshRequest req, @AuthenticationPrincipal Jwt jwt) {
         // 1) Rotation sécurisée du refresh
         String newRefresh = refreshTokenService.rotate(req.refresh_token());
