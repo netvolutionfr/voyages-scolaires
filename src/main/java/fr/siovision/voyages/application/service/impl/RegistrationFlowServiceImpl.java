@@ -8,6 +8,7 @@ import com.webauthn4j.data.*;
 import com.webauthn4j.verifier.exception.VerificationException;
 import fr.siovision.voyages.application.service.ChallengeService;
 import fr.siovision.voyages.application.service.JwtService;
+import fr.siovision.voyages.application.service.OtpService;
 import fr.siovision.voyages.application.service.RegistrationFlowService;
 import fr.siovision.voyages.domain.model.RegistrationAttempt;
 import fr.siovision.voyages.domain.model.UserStatus;
@@ -44,6 +45,7 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
     private final ChallengeService regChallengeService;
     private final JwtService jwtService;
     private final ObjectMapper objectMapper;
+    private final OtpService otpService;
 
     // WebAuthn4J registration manager (non-strict = accepte plus d’attestations)
     private final WebAuthnRegistrationManager webAuthnManager =
@@ -124,6 +126,9 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
             user.setStatus(UserStatus.PENDING);
             userRepository.save(user);
         }
+
+        // Envoyer un otp par mail
+        otpService.issueAndSend(user);
 
         // Créer un JWT avec le status PENDING
         String jwt = jwtService.generateToken(user);
