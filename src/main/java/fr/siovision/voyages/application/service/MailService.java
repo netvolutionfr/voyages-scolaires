@@ -41,4 +41,30 @@ public class MailService {
                 """.formatted(url));
         mailSender.send(msg);
     }
+
+    public void sendOtpEmail(User user, String plainCode, Long otpTtlMinutes) {
+        var toEmail = user.getEmail();
+
+        var msg = new SimpleMailMessage();
+        msg.setTo(toEmail);
+        msg.setFrom(senderEmail);
+        msg.setSubject("Votre code de vérification pour Campus Away");
+        msg.setText("""
+                Bonjour,
+                
+                Voici votre code de vérification : %s
+                Il expire dans %d minute(s).
+
+                Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer cet e-mail.
+
+                — Campus Away
+                """.formatted(formatForReadability(plainCode), otpTtlMinutes));
+        mailSender.send(msg);
+    }
+
+    private static String formatForReadability(String code) {
+        // "482193" -> "482 193"
+        if (code.length() == 6) return code.substring(0,3) + " " + code.substring(3);
+        return code;
+    }
 }

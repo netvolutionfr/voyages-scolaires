@@ -64,8 +64,8 @@ public class AuthController {
     }
 
     @PostMapping("/auth/verify-otp")
-    VerifyOtpResponse verify(@Valid @RequestBody VerifyOtpRequest req) {
-        return otpService.verify(req);
+    RefreshResponse verify(@Valid @RequestBody VerifyOtpRequest req) {
+        return otpService.verifyAccountOtp(req.email(), req.otp());
     }
 
     @GetMapping("/webauthn/authenticate/options")

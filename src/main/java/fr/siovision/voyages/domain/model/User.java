@@ -61,4 +61,8 @@ public class User {
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+
+    public void markAsVerified() {
+        this.status = UserStatus.ACTIVE;
+    }
 }

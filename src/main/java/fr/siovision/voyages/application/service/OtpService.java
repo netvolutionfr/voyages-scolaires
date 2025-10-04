@@ -1,9 +1,9 @@
 package fr.siovision.voyages.application.service;
 
-import fr.siovision.voyages.infrastructure.dto.authentication.VerifyOtpRequest;
-import fr.siovision.voyages.infrastructure.dto.authentication.VerifyOtpResponse;
+import fr.siovision.voyages.domain.model.User;
+import fr.siovision.voyages.infrastructure.dto.authentication.RefreshResponse;
 
 public interface OtpService {
-    void issueAndSend(String email);
-    VerifyOtpResponse verify(VerifyOtpRequest req);
+    void issueAndSend(User user);
+    RefreshResponse verifyAccountOtp(String email, String otpCode);
 }
