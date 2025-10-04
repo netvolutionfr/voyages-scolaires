@@ -3,6 +3,7 @@ package fr.siovision.voyages.application.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.webauthn4j.converter.util.ObjectConverter;
 import com.webauthn4j.data.*;
 import com.webauthn4j.verifier.exception.VerificationException;
 import fr.siovision.voyages.application.service.ChallengeService;
@@ -110,7 +111,8 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
         assert registrationData.getAttestationObject() != null;
         WebAuthnCredential webAuthnCredential = new WebAuthnCredential(
                 user,
-                registrationData
+                registrationData,
+                new ObjectConverter()
         );
         credentialRepository.save(webAuthnCredential);
 
@@ -134,12 +136,9 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
         String displayName = req.displayName();
         String originValue;
 
-        // 0) Logging - OK
-        log.info("RegisterFinishRequest: {}", req);
-
         // 1) Extraire le JSON 'credential' depuis ta string 'registrationRequest'
-        ObjectMapper om = objectMapper; // ton mapper habituel
-        JsonNode root = null;
+        ObjectMapper om = objectMapper;
+        JsonNode root;
         try {
             root = om.readTree(req.registrationRequest());
         } catch (JsonProcessingException e) {
@@ -156,7 +155,6 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
             throw new RuntimeException(e);
         }
 
-        log.info("Credential JSON: {}", credentialJson);
         // 2) Parser via WebAuthn4J (PAS de mapping manuel vers PublicKeyCredential<?>)
         RegistrationData regData = webAuthnManager.parse(credentialJson);
 
@@ -166,14 +164,13 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
             originValue = appOrigin;
         }
 
-        // 1) Récupérer le contexte serveur (challenge attendu + rpId + origin)
+        // 3) Récupérer le contexte serveur (challenge attendu + rpId + origin)
         Origin origin = new Origin(originValue);
         String rpId = this.rpId;
 
-        // 2) Récupérer le challenge dans registration_attempt
+        // 4) Récupérer le challenge dans registration_attempt
         assert regData.getCollectedClientData() != null;
         Challenge expectedChallenge = regData.getCollectedClientData().getChallenge();
-        log.info("Expected challenge: {}", expectedChallenge.getValue());
         RegistrationAttempt attempt = regChallengeService.getChallenge(expectedChallenge)
                 .orElseThrow(() -> new IllegalStateException("Challenge de registration introuvable"));
 
@@ -201,7 +198,8 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
         assert regData.getAttestationObject() != null;
         WebAuthnCredential webAuthnCredential = new WebAuthnCredential(
                 user,
-                regData
+                regData,
+                new ObjectConverter()
         );
         credentialRepository.save(webAuthnCredential);
 

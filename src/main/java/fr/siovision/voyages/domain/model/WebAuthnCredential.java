@@ -1,12 +1,12 @@
 package fr.siovision.voyages.domain.model;
 
+import com.webauthn4j.converter.util.ObjectConverter;
 import com.webauthn4j.data.RegistrationData;
 import com.webauthn4j.data.attestation.authenticator.AttestedCredentialData;
-import com.webauthn4j.data.attestation.authenticator.AuthenticatorData;
-import com.webauthn4j.data.extension.authenticator.RegistrationExtensionAuthenticatorOutput;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -29,8 +29,8 @@ public class WebAuthnCredential {
     @Column(columnDefinition = "bytea")
     private byte[] credentialId;
 
-    @Column(columnDefinition = "bytea")
-    private byte[] publicKey;
+    @Lob @Column(columnDefinition = "bytea", nullable=false)
+    private byte[] coseKey;
 
     private long signatureCount;
 
@@ -41,18 +41,30 @@ public class WebAuthnCredential {
     private String aaguid;
 
     // --- Constructeur pour la persistance ---
-    public WebAuthnCredential(User user, RegistrationData registrationData) {
-        this.user = user;
+    public WebAuthnCredential(User user, RegistrationData registrationData, ObjectConverter objectConverter) {
+        this.user = Objects.requireNonNull(user, "user");
+        Objects.requireNonNull(registrationData.getAttestationObject(), "attestationObject");
 
-        assert registrationData.getAttestationObject() != null;
-        AttestedCredentialData attestedCredentialData = registrationData.getAttestationObject().getAuthenticatorData().getAttestedCredentialData();
-        assert attestedCredentialData != null;
-        this.credentialId = attestedCredentialData.getCredentialId();
-        this.publicKey = Objects.requireNonNull(attestedCredentialData.getCOSEKey().getPublicKey()).getEncoded();
-        AuthenticatorData<RegistrationExtensionAuthenticatorOutput> authenticatorData = registrationData.getAttestationObject().getAuthenticatorData();
-        this.signatureCount = authenticatorData.getSignCount();
-        this.userHandle = user.getPublicId().toString().getBytes(); // Assumer que user.getPublicId() est une chaîne unique pour l'utilisateur
-        this.aaguid = attestedCredentialData.getAaguid().toString();
+        var attObj = registrationData.getAttestationObject();
+        var authData = attObj.getAuthenticatorData();
+        AttestedCredentialData acd = Objects.requireNonNull(
+                authData.getAttestedCredentialData(), "attestedCredentialData");
+
+        // ID du credential
+        this.credentialId = Objects.requireNonNull(acd.getCredentialId(), "credentialId");
+
+        // COSEKey -> CBOR (à stocker en base)
+        var coseKey = Objects.requireNonNull(acd.getCOSEKey(), "COSEKey");
+        this.coseKey = objectConverter.getCborConverter().writeValueAsBytes(coseKey);
+
+        // Compteur initial
+        this.signatureCount = authData.getSignCount();
+
+        // userHandle: choisis un encodage stable (UTF-8 si tu pars d’une String)
+        this.userHandle = user.getPublicId().toString().getBytes(StandardCharsets.UTF_8);
+
+        // AAGUID
+        this.aaguid = acd.getAaguid().toString();
     }
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

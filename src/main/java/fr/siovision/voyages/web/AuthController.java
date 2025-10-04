@@ -1,6 +1,8 @@
 package fr.siovision.voyages.web;
 
+import com.webauthn4j.data.AuthenticationRequest;
 import com.webauthn4j.data.PublicKeyCredentialCreationOptions;
+import com.webauthn4j.data.PublicKeyCredentialRequestOptions;
 import fr.siovision.voyages.infrastructure.dto.authentication.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -54,12 +56,14 @@ public class AuthController {
         return otpService.verify(req);
     }
 
-    @PostMapping("/webauthn/authenticate/options")
-    AuthnOptionsResponse authnOptions(@RequestBody(required=false) EmailHint req) {
-        return authenticationService.options(req);
+    @GetMapping("/webauthn/authenticate/options")
+    PublicKeyCredentialRequestOptions authnOptionsIOS(HttpServletRequest httpRequest) {
+        String origin = httpRequest.getHeader("Origin");
+        return challengeService.issueAuthIOS(origin);
     }
 
     @PostMapping("/webauthn/authenticate/finish")
-    JwtResponse finishAuthn(@Valid @RequestBody AuthnFinishRequest req) {
-        return authenticationService.finish(req);
+    JwtResponse finishAuthn(@Valid @RequestBody AuthenticationRequest AuthenticationRequest, HttpServletRequest httpRequest) {
+        String appOrigin = httpRequest.getHeader("Origin");
+        return authenticationService.finish(AuthenticationRequest , appOrigin);
     }}

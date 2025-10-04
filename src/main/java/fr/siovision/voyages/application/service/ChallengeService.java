@@ -3,6 +3,7 @@ package fr.siovision.voyages.application.service;
 import com.webauthn4j.data.AuthenticatorSelectionCriteria;
 import com.webauthn4j.data.PublicKeyCredentialCreationOptions;
 import com.webauthn4j.data.PublicKeyCredentialParameters;
+import com.webauthn4j.data.PublicKeyCredentialRequestOptions;
 import com.webauthn4j.data.client.challenge.Challenge;
 import fr.siovision.voyages.domain.model.RegistrationAttempt;
 
@@ -21,5 +22,7 @@ public interface ChallengeService {
     AuthenticatorSelectionCriteria getAuthenticatorSelectionCriteria();
 
     void invalidateChallenge(RegistrationAttempt attempt);
+
+    PublicKeyCredentialRequestOptions issueAuthIOS(String rpOrigin);
 
 }

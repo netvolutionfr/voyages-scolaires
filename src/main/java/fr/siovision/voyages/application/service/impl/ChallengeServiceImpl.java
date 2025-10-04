@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 
@@ -123,6 +124,40 @@ public class ChallengeServiceImpl implements ChallengeService {
         return getPublicKeyCredentialCreationOptions(chal, rpEntity, userEntity);
     }
 
+    @Override @Transactional
+    public PublicKeyCredentialRequestOptions issueAuthIOS(String rpOrigin) {
+        String originValue;
+
+        if (!rpOrigins.contains(rpOrigin)) {
+            originValue = defaultOrigin; // Utiliser l'origine par défaut si l'origine fournie n'est pas autorisée
+        } else {
+            originValue = rpOrigin;
+        }
+
+        UUID uuid = UUID.randomUUID();
+        byte[] chal = new byte[32]; rng.nextBytes(chal);
+        var att = new RegistrationAttempt();
+        att.setUuid(uuid);
+        att.setChallenge(chal);
+        att.setRpId(rpId);
+        att.setOrigin(originValue);
+        att.setExpiresAt(Instant.now().plusSeconds(challengeTtlSeconds));
+        att.setUsed(false);
+        attempts.save(att);
+
+        // Entités
+        PublicKeyCredentialUserEntity userEntity = new PublicKeyCredentialUserEntity(
+                uuid.toString().getBytes(),
+                uuid.toString(),
+                ""
+        );
+
+        // 4. Paramètres de la Passkey (clé découvrable par défaut)
+
+        return getPublicKeyCredentialRequestOptions(chal, userEntity);
+    }
+
+
     private PublicKeyCredentialCreationOptions getPublicKeyCredentialCreationOptions(byte[] chal, PublicKeyCredentialRpEntity rpEntity, PublicKeyCredentialUserEntity userEntity) {
         AuthenticatorSelectionCriteria authenticatorSelection = this.getAuthenticatorSelectionCriteria();
         List<PublicKeyCredentialParameters> pubKeyCredParams = this.getPubKeyCredParams();
@@ -139,6 +174,33 @@ public class ChallengeServiceImpl implements ChallengeService {
                 List.of(), // Hints d'authentificateurs (vide ici)
                 AttestationConveyancePreference.NONE, // Pas besoin d'attestation
                 null // Pas d'extensions supplémentaires
+        );
+    }
+
+    private PublicKeyCredentialRequestOptions getPublicKeyCredentialRequestOptions(
+            byte[] chal,
+            PublicKeyCredentialUserEntity userEntity
+    ) {
+        Challenge challenge = new DefaultChallenge(chal);
+        List<PublicKeyCredentialDescriptor> allowCredentials = List.of(
+                new PublicKeyCredentialDescriptor(
+                        PublicKeyCredentialType.PUBLIC_KEY,
+                        userEntity.getId(), // ID de l'utilisateur (UUID en bytes)
+                        Set.of(AuthenticatorTransport.INTERNAL) // Transport interne (clé intégrée)
+                )
+        );
+        UserVerificationRequirement userVerification = UserVerificationRequirement.REQUIRED;
+        List<PublicKeyCredentialHints> hints = List.of(
+                PublicKeyCredentialHints.SECURITY_KEY
+        );
+        return new PublicKeyCredentialRequestOptions(
+                challenge, // Challenge
+                challengeTtlSeconds * 1000, // Timeout en ms
+                rpId,
+                allowCredentials,
+                userVerification,
+                hints,
+                null
         );
     }
 
@@ -187,5 +249,13 @@ public class ChallengeServiceImpl implements ChallengeService {
         int deletedCount = attempts.deleteByCreatedAtBefore(expirationThreshold);
 
         System.out.println("Purge de challenges terminée. " + deletedCount + " enregistrements supprimés.");
+    }
+
+    // Purger les challenges expirés toutes les 10 minutes
+    @Scheduled(fixedDelay = 10 * 60 * 1000)
+    public void purgeExpiredChallenges() {
+        Instant now = Instant.now();
+        List<RegistrationAttempt> expiredAttempts = attempts.findByExpiresAtBefore(now);
+        attempts.deleteAll(expiredAttempts);
     }
 }
