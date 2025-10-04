@@ -29,7 +29,7 @@ public class WebAuthnCredential {
     @Column(columnDefinition = "bytea")
     private byte[] credentialId;
 
-    @Lob @Column(name="cose_key", columnDefinition="bytea", nullable = false)
+    @Column(name="cose_key", columnDefinition="bytea", nullable = false)
     private byte[] coseKey;
 
     private long signatureCount;
