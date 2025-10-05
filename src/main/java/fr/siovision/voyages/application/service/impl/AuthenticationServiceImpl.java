@@ -24,7 +24,6 @@ import fr.siovision.voyages.domain.model.User;
 import fr.siovision.voyages.domain.model.UserStatus;
 import fr.siovision.voyages.domain.model.WebAuthnCredential;
 import fr.siovision.voyages.infrastructure.dto.authentication.*;
-import fr.siovision.voyages.infrastructure.repository.UserRepository;
 import fr.siovision.voyages.infrastructure.repository.WebAuthnCredentialRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
