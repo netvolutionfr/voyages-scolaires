@@ -5,5 +5,5 @@ import fr.siovision.voyages.infrastructure.dto.authentication.AuthResponse;
 import fr.siovision.voyages.infrastructure.dto.authentication.JwtResponse;
 
 public interface AuthenticationService {
-    AuthResponse finish(AuthenticationRequest req, String appOrigin);
+    AuthResponse finish(String req, String appOrigin);
 }

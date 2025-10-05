@@ -73,9 +73,9 @@ public class AuthController {
     }
 
     @PostMapping("/webauthn/authenticate/finish")
-    AuthResponse finishAuthn(@Valid @RequestBody AuthenticationRequest AuthenticationRequest, HttpServletRequest httpRequest) {
+    AuthResponse finishAuthn(@Valid @RequestBody String authenticationRequest, HttpServletRequest httpRequest) {
         String appOrigin = httpRequest.getHeader("Origin");
-        return authenticationService.finish(AuthenticationRequest , appOrigin);
+        return authenticationService.finish(authenticationRequest , appOrigin);
     }
 
     @PostMapping("/auth/refresh")

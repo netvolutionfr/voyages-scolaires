@@ -61,7 +61,7 @@ public class AuthenticationServiceImpl  implements AuthenticationService {
     long refreshTtlSec;
 
     @Override
-    public AuthResponse finish(AuthenticationRequest req, String appOrigin) {
+    public AuthResponse finish(String req, String appOrigin) {
         // 1. Parser la requete d'authentification
         AuthenticationData authenticationData = webAuthnManager.parse(req);
 
