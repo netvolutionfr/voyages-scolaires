@@ -37,6 +37,7 @@ public class RefreshToken {
     private byte[] tokenHash;
 
     /** Identifiant de famille pour révoquer tous les refresh liés (logout-all) */
+    @Builder.Default
     @Column(name = "family_id", nullable = false, columnDefinition = "uuid")
     private UUID familyId = UUID.randomUUID();
 
@@ -63,6 +64,11 @@ public class RefreshToken {
     @OneToOne
     @JoinColumn(name = "replaced_by_id")
     private RefreshToken replacedBy;
+
+    @PrePersist
+    void ensureFamilyId() {
+        if (familyId == null) familyId = UUID.randomUUID();
+    }
 
     /* --- Constructeur pratique --- */
     public RefreshToken(User user, byte[] hash, Instant expiresAt, String status) {
