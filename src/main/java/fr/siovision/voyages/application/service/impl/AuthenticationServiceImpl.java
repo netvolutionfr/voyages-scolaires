@@ -40,7 +40,6 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AuthenticationServiceImpl  implements AuthenticationService {
     private final WebAuthnCredentialRepository credentialRepository;
-    private final UserRepository userRepository;
     private final ChallengeService challengeService;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
