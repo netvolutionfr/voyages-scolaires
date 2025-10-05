@@ -114,7 +114,8 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
         WebAuthnCredential webAuthnCredential = new WebAuthnCredential(
                 user,
                 registrationData,
-                new ObjectConverter()
+                new ObjectConverter(),
+                user.getPublicId().toString()
         );
         credentialRepository.save(webAuthnCredential);
 
