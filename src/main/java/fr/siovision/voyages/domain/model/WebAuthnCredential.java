@@ -41,7 +41,7 @@ public class WebAuthnCredential {
     private String aaguid;
 
     // --- Constructeur pour la persistance ---
-    public WebAuthnCredential(User user, RegistrationData registrationData, ObjectConverter objectConverter) {
+    public WebAuthnCredential(User user, RegistrationData registrationData, ObjectConverter objectConverter, String userId) {
         this.user = Objects.requireNonNull(user, "user");
         Objects.requireNonNull(registrationData.getAttestationObject(), "attestationObject");
 
@@ -59,8 +59,8 @@ public class WebAuthnCredential {
         // Compteur initial
         this.signatureCount = authData.getSignCount();
 
-        // userHandle: choisis un encodage stable (UTF-8 si tu pars d’une String)
-        this.userHandle = user.getPublicId().toString().getBytes(StandardCharsets.UTF_8);
+        // userHandle
+        this.userHandle = userId.getBytes(StandardCharsets.UTF_8);
 
         // AAGUID
         this.aaguid = acd.getAaguid().toString();

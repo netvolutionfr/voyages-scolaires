@@ -160,6 +160,16 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
             throw new RuntimeException(e);
         }
 
+        // Récupération du userId
+        JsonNode userIdNode = root.get("userId");
+        if (userIdNode == null || userIdNode.isNull()) {
+            throw new IllegalArgumentException("Invalid registrationRequest: missing 'userId'");
+        }
+        String userIdStr = userIdNode.asText();
+        if (userIdStr == null || userIdStr.isEmpty()) {
+            throw new IllegalArgumentException("Invalid registrationRequest: empty 'userId'");
+        }
+
         // 2) Parser via WebAuthn4J (PAS de mapping manuel vers PublicKeyCredential<?>)
         RegistrationData regData = webAuthnManager.parse(credentialJson);
 
@@ -204,7 +214,8 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
         WebAuthnCredential webAuthnCredential = new WebAuthnCredential(
                 user,
                 regData,
-                new ObjectConverter()
+                new ObjectConverter(),
+                userIdStr
         );
         credentialRepository.save(webAuthnCredential);
 
