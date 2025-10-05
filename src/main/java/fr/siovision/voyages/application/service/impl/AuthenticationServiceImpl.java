@@ -126,11 +126,7 @@ public class AuthenticationServiceImpl  implements AuthenticationService {
         // Détruire le challenge (one-time use)
         challengeService.invalidateChallenge(attempt);
 
-        byte[] userHandle = authenticationData.getUserHandle();
-        UUID userPublicId = UUID.nameUUIDFromBytes(userHandle);
-
-        User user = userRepository.findByPublicId(userPublicId)
-                .orElseThrow(() -> new IllegalStateException("User not found for UUID: " + userPublicId));
+        User user = credential.getUser();
 
         // Créer un JWT
         String accessToken = jwtService.generateAccessToken(user);
