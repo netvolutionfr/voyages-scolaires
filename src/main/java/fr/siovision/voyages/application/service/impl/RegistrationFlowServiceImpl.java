@@ -133,7 +133,7 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
         // Créer un JWT avec le status PENDING
         String jwt = jwtService.generateToken(user);
 
-        return new RegisterFinishResponse(jwt, user.getStatus().name());
+        return new RegisterFinishResponse(jwt, user.getStatus().name(), user.getFirstName(), user.getLastName(), user.getEmail() );
     }
 
     public RegisterFinishResponse finishRegistrationOneStep(RegisterFinishRequest req, String appOrigin) {
@@ -224,6 +224,6 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
         // Créer un JWT avec le status PENDING
         String jwt = jwtService.generateToken(user);
 
-        return new RegisterFinishResponse(jwt, user.getStatus().name());
+        return new RegisterFinishResponse(jwt, user.getStatus().name(), user.getFirstName(), user.getLastName(), user.getEmail() );
     }
 }
