@@ -1,5 +1,6 @@
 package fr.siovision.voyages.application.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.webauthn4j.WebAuthnAuthenticationManager;
 import com.webauthn4j.converter.util.ObjectConverter;
@@ -44,6 +45,7 @@ public class AuthenticationServiceImpl  implements AuthenticationService {
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
     private final WebAuthnAuthenticationManager webAuthnManager = new WebAuthnAuthenticationManager();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${webauthn.allowed-origins}")          // ex: https://app.campusaway.fr (ou http://localhost:5173 en dev)
     private List<String> allowedOrigins;
@@ -61,9 +63,15 @@ public class AuthenticationServiceImpl  implements AuthenticationService {
     long refreshTtlSec;
 
     @Override
-    public AuthResponse finish(String req, String appOrigin) {
+    public AuthResponse finish(AuthnFinishRequest req, String appOrigin) {
         // 1. Parser la requete d'authentification
-        AuthenticationData authenticationData = webAuthnManager.parse(req);
+        String json;
+        try {
+            json = objectMapper.writeValueAsString(req);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        AuthenticationData authenticationData = webAuthnManager.parse(json);
 
         // 2. Construire ServerProperties
         // Récupérer le challenge dans registration_attempt
@@ -151,7 +159,7 @@ public class AuthenticationServiceImpl  implements AuthenticationService {
                 aaguid,
                 credential.getCredentialId(),
                 cose);
-        CredentialRecord credentialRecord = new CredentialRecordImpl(
+        return new CredentialRecordImpl(
                 /*
                     @NotNull AttestationStatement attestationStatement,
                     @Nullable Boolean uvInitialized,
@@ -175,6 +183,5 @@ public class AuthenticationServiceImpl  implements AuthenticationService {
                 null,
                 null
         );
-        return credentialRecord;
     }
 }

@@ -1,6 +1,5 @@
 package fr.siovision.voyages.web;
 
-import com.webauthn4j.data.AuthenticationRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jwt.Jwt;
 import com.webauthn4j.data.PublicKeyCredentialCreationOptions;
@@ -73,7 +72,7 @@ public class AuthController {
     }
 
     @PostMapping("/webauthn/authenticate/finish")
-    AuthResponse finishAuthn(@Valid @RequestBody String authenticationRequest, HttpServletRequest httpRequest) {
+    AuthResponse finishAuthn(@Valid @RequestBody AuthnFinishRequest authenticationRequest, HttpServletRequest httpRequest) {
         String appOrigin = httpRequest.getHeader("Origin");
         return authenticationService.finish(authenticationRequest , appOrigin);
     }

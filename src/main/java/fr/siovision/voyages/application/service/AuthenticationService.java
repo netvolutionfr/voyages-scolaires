@@ -1,9 +1,8 @@
 package fr.siovision.voyages.application.service;
 
-import com.webauthn4j.data.AuthenticationRequest;
 import fr.siovision.voyages.infrastructure.dto.authentication.AuthResponse;
-import fr.siovision.voyages.infrastructure.dto.authentication.JwtResponse;
+import fr.siovision.voyages.infrastructure.dto.authentication.AuthnFinishRequest;
 
 public interface AuthenticationService {
-    AuthResponse finish(String req, String appOrigin);
+    AuthResponse finish(AuthnFinishRequest req, String appOrigin);
 }
