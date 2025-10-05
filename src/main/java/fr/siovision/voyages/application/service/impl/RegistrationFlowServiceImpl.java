@@ -218,6 +218,9 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
             userRepository.save(user);
         }
 
+        // Envoyer un otp par mail
+        otpService.issueAndSend(user);
+
         // Créer un JWT avec le status PENDING
         String jwt = jwtService.generateToken(user);
 
