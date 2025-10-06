@@ -61,6 +61,9 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
     @Value("${webauthn.default-origin}") // ex: https://campusaway.fr
     private String defaultOrigin;
 
+    @Value("${app.jwt.pending-ttl-seconds:300}")
+    long pendingTtlSec;
+
     @Override
     public RegisterFinishResponse finishRegistration(String registrationRequest, String appOrigin) {
         String originValue;
@@ -134,7 +137,19 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
         // Créer un JWT avec le status PENDING
         String jwt = jwtService.generateToken(user);
 
-        return new RegisterFinishResponse(jwt, user.getStatus().name(), user.getFirstName(), user.getLastName(), user.getEmail() );
+        return RegisterFinishResponse.builder()
+                .tokenType("Bearer")
+                .accessToken(jwt)
+                .expiresIn(pendingTtlSec)
+                .user(RegisterFinishResponse.UserInfo.builder()
+                        .id(user.getPublicId().toString())
+                        .email(user.getEmail())
+                        .firstName(user.getFirstName())
+                        .lastName(user.getLastName())
+                        .role(user.getStatus() == UserStatus.PENDING ? "PENDING" : user.getRole().toString())
+                        .status(user.getStatus().name())
+                        .build())
+                .build();
     }
 
     public RegisterFinishResponse finishRegistrationOneStep(RegisterFinishRequest req, String appOrigin) {
@@ -236,6 +251,18 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
         // Créer un JWT avec le status PENDING
         String jwt = jwtService.generateToken(user);
 
-        return new RegisterFinishResponse(jwt, user.getStatus().name(), user.getFirstName(), user.getLastName(), user.getEmail() );
+        return RegisterFinishResponse.builder()
+                .tokenType("Bearer")
+                .accessToken(jwt)
+                .expiresIn(pendingTtlSec)
+                .user(RegisterFinishResponse.UserInfo.builder()
+                        .id(user.getPublicId().toString())
+                        .email(user.getEmail())
+                        .firstName(user.getFirstName())
+                        .lastName(user.getLastName())
+                        .role(user.getStatus() == UserStatus.PENDING ? "PENDING" : user.getRole().toString())
+                        .status(user.getStatus().name())
+                        .build())
+                .build();
     }
 }
