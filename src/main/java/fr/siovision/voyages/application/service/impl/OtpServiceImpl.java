@@ -70,7 +70,7 @@ public class OtpServiceImpl implements OtpService {
             if (Instant.now().isBefore(permissible)) {
                 // On ne renvoie pas un nouveau code trop vite ; on peut relancer le même e-mail (optionnel)
                 // Ici, on choisit de REFUSER pour éviter l’abus :
-                throw new TooManyRequestsException("Veuillez patienter avant de redemander un code.");
+                throw new TooManyRequestsException("Please wait before requesting a new code.");
             }
             // Optionnel: marquer l'ancien PENDING comme EXPIRED avant d'en créer un nouveau
             last.setStatus(OtpToken.Status.EXPIRED);
@@ -98,27 +98,27 @@ public class OtpServiceImpl implements OtpService {
     @Transactional
     public RefreshResponse verifyAccountOtp(String email, String otpCode) {
         User user = userRepo.findByEmailIgnoreCase(email)
-                .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         OtpToken token = otpRepo.findOtpTokenByUserAndPurposeAndStatusOrderByCreatedAtDesc(
                         user, OtpToken.Purpose.ACCOUNT_VERIFICATION, OtpToken.Status.PENDING)
-                .orElseThrow(() -> new InvalidOtpException("Aucun OTP actif. Demandez un nouveau code."));
+                .orElseThrow(() -> new InvalidOtpException("No validation code found. Please request a new code."));
 
         if (Instant.now().isAfter(token.getExpiresAt())) {
             token.setStatus(OtpToken.Status.EXPIRED);
-            throw new InvalidOtpException("Code expiré. Demandez un nouveau code.");
+            throw new InvalidOtpException("Expired code. Please request a new code.");
         }
 
         if (token.getAttempts() >= maxAttempts) {
             token.setStatus(OtpToken.Status.EXPIRED);
-            throw new InvalidOtpException("Nombre maximum de tentatives atteint. Demandez un nouveau code.");
+            throw new InvalidOtpException("Maximum number of attempts exceeded. Please request a new code.");
         }
 
         token.setAttempts(token.getAttempts() + 1);
 
         boolean ok = passwordEncoder.matches(otpCode, token.getCodeHash());
         if (!ok) {
-            throw new InvalidOtpException("Code invalide.");
+            throw new InvalidOtpException("Invalid code. Please try again.");
         }
 
         // Succès: consommer l’OTP
@@ -126,7 +126,7 @@ public class OtpServiceImpl implements OtpService {
         token.setConsumedAt(Instant.now());
         otpRepo.save(token);
 
-        // Logique métier : activer l’utilisateur (ex: passer de PENDING -> ACTIVE)
+        // Logique métier : activer l’utilisateur (passer de PENDING -> ACTIVE)
         user.markAsVerified();
         userRepo.save(user);
 

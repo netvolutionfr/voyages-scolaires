@@ -6,6 +6,8 @@ import fr.siovision.voyages.domain.model.User;
 import fr.siovision.voyages.infrastructure.repository.RefreshTokenRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.security.MessageDigest;
@@ -17,10 +19,13 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class RefreshTokenServiceImpl implements RefreshTokenService {
+    @Value("${app.jwt.refresh-ttl-seconds:2592000}")
+    private static int refreshTokenTtlSeconds;
+
     private final RefreshTokenRepository repo;
 
-    /** Durée de vie par défaut (ex. 30 jours). Externalise-la en @Value si tu préfères. */
-    private static final Duration DEFAULT_TTL = Duration.ofDays(30);
+    /** Durée de vie par défaut (ex. 30 jours). */
+    private static final Duration DEFAULT_TTL = Duration.ofSeconds(refreshTokenTtlSeconds);
 
     /** Génère un token opaque (Base64URL) de 48 octets (~384 bits). */
     public String generateOpaqueToken() {
@@ -121,7 +126,8 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         return repo.revokeFamily(familyId);
     }
 
-    /** Nettoyage périodique des tokens expirés. À déclencher via un @Scheduled si tu veux. */
+    /** Nettoyage périodique des tokens expirés */
+    @Scheduled(cron = "0 0 * * * *")
     @Transactional
     public int purgeExpired() {
         return repo.deleteAllExpired(Instant.now());
