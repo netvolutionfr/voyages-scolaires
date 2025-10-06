@@ -1,7 +1,6 @@
 package fr.siovision.voyages.infrastructure.dto.authentication;
 
-public record VerifyOtpRequest(
+public record OtpVerifyRequest(
         String email,
         String otp
-) {
-}
+) {}

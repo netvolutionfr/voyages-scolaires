@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     private final ChallengeService challengeService;
     private final RegistrationFlowService registrationFlowService;
-    private final OtpService otpService;
     private final AuthenticationService authenticationService;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
@@ -58,11 +57,6 @@ public class AuthController {
     RegisterFinishResponse finishRegister(@Valid @RequestBody String registrationRequest, HttpServletRequest httpRequest) {
         String origin = httpRequest.getHeader("Origin");
         return registrationFlowService.finishRegistration(registrationRequest, origin);
-    }
-
-    @PostMapping("/auth/verify-otp")
-    RefreshResponse verify(@Valid @RequestBody VerifyOtpRequest req) {
-        return otpService.verifyAccountOtp(req.email(), req.otp());
     }
 
     @GetMapping("/webauthn/authenticate/options")

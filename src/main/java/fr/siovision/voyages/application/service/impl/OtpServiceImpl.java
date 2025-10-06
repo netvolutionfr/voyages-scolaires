@@ -47,6 +47,12 @@ public class OtpServiceImpl implements OtpService {
     @Value("${app.jwt.refresh-ttl-seconds:2592000}")
     private long refreshTtlSeconds;
 
+    @Value("${app.otp.resend-quota-count:5}")
+    private int resendQuotaCount;
+
+    @Value("${app.otp.resend-quota-window-minutes:15}")
+    private int resendQuotaWindowMin;
+
     private static final SecureRandom SR = new SecureRandom();
 
     @Override
@@ -135,6 +141,38 @@ public class OtpServiceImpl implements OtpService {
                 refreshTtlSeconds
         );
     }
+
+    @Override
+    @Transactional
+    public void resend(String email) {
+        User user = userRepo.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // 1) Quota fenêtre glissante
+        Instant windowStart = Instant.now().minus(resendQuotaWindowMin, ChronoUnit.MINUTES);
+        long issuedInWindow = otpRepo.countByUserAndPurposeAndCreatedAtAfter(
+                user, OtpToken.Purpose.ACCOUNT_VERIFICATION, windowStart);
+        if (issuedInWindow >= resendQuotaCount) {
+            throw new TooManyRequestsException("Too many requests in a short time. Please try later.");
+        }
+
+        // 2) Cooldown + invalidation de l'ancien PENDING si on régénère
+        var existing = otpRepo.findOtpTokenByUserAndPurposeAndStatusOrderByCreatedAtDesc(
+                user, OtpToken.Purpose.ACCOUNT_VERIFICATION, OtpToken.Status.PENDING);
+
+        if (existing.isPresent()) {
+            var last = existing.get();
+            var permissible = last.getCreatedAt().plus(resendCooldownSeconds, ChronoUnit.SECONDS);
+            if (Instant.now().isBefore(permissible)) {
+                throw new TooManyRequestsException("Please wait before requesting a new code.");
+            }
+            last.setStatus(OtpToken.Status.EXPIRED);
+        }
+
+        // 3) Réutilise la génération standard : nouveau code, nouveau hash, envoi e-mail
+        issueAndSend(user);
+    }
+    /* Helpers */
 
     private static String generateNumericOtp(int length) {
         // Sans biais modulo : on tire des chiffres 0-9 uniformément
