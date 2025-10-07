@@ -1,5 +1,6 @@
 package fr.siovision.voyages.config;
 
+import fr.siovision.voyages.application.aspect.RequestAuditFilter;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.boot.actuate.health.HealthEndpoint;
 import org.springframework.boot.actuate.info.InfoEndpoint;
@@ -13,18 +14,13 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-import java.util.List;
-import java.util.Map;
 
 @Configuration
 @EnableMethodSecurity
@@ -48,7 +44,7 @@ public class SecurityConfig {
     @Order(1)
     @Bean
     @Profile("dev")
-    public SecurityFilterChain devSecurityChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain devSecurityChain(HttpSecurity http, RequestAuditFilter audit) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> corsConfigurer())
@@ -72,7 +68,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/files/**").hasAnyRole("ADMIN","TEACHER")
                         .requestMatchers("/api/admin/**").hasAnyRole("ADMIN")
                         .requestMatchers("/**").authenticated()
-                );
+                )
+                .oauth2ResourceServer(o -> o.jwt(j -> j.jwtAuthenticationConverter(jwtAuthenticationConverter())))
+                .addFilterAfter(audit, org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.class);
 
         return http.build();
     }
@@ -80,7 +78,7 @@ public class SecurityConfig {
     @Order(1)
     @Bean
     @Profile("!dev")
-    public SecurityFilterChain prodSecurityChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain prodSecurityChain(HttpSecurity http, RequestAuditFilter audit) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(AbstractHttpConfigurer::disable) // CORS géré par le proxy frontal (Nginx, Apache, autre) ou api dans le même domaine
@@ -96,31 +94,22 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasAnyRole("ADMIN")
                         .requestMatchers("/**").authenticated()
                 )
-        ;
+                .oauth2ResourceServer(o -> o.jwt(j -> j.jwtAuthenticationConverter(jwtAuthenticationConverter())))
+                .addFilterAfter(audit, org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.class);
 
         return http.build();
     }
 
     @Bean
-    public JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+    JwtAuthenticationConverter jwtAuthenticationConverter() {
+        var conv = new JwtAuthenticationConverter();
 
-        converter.setJwtGrantedAuthoritiesConverter((Jwt jwt) -> {
-            Object realmAccess = jwt.getClaim("realm_access");
+        var delegate = new JwtGrantedAuthoritiesConverter();
+        delegate.setAuthoritiesClaimName("roles");
+        delegate.setAuthorityPrefix("ROLE_");
 
-            if (realmAccess instanceof Map<?, ?> map && map.get("roles") instanceof List<?> rolesList) {
-
-                return rolesList.stream()
-                        .filter(String.class::isInstance)
-                        .map(role -> new SimpleGrantedAuthority("ROLE_" + ((String) role).toUpperCase()))
-                        .map(granted -> (GrantedAuthority) granted) // <-- assure le bon type
-                        .toList();
-            }
-
-            return List.of();
-        });
-
-        return converter;
+        conv.setJwtGrantedAuthoritiesConverter(delegate);
+        return conv;
     }
 
     @Bean
