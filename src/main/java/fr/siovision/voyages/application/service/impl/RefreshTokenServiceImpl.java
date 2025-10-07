@@ -20,12 +20,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RefreshTokenServiceImpl implements RefreshTokenService {
     @Value("${app.jwt.refresh-ttl-seconds:2592000}")
-    private static int refreshTokenTtlSeconds;
+    private int refreshTokenTtlSeconds;
+
+    public Duration getRefreshTtl() {
+        return Duration.ofSeconds(refreshTokenTtlSeconds);
+    }
 
     private final RefreshTokenRepository repo;
-
-    /** Durée de vie par défaut (ex. 30 jours). */
-    private static final Duration DEFAULT_TTL = Duration.ofSeconds(refreshTokenTtlSeconds);
 
     /** Génère un token opaque (Base64URL) de 48 octets (~384 bits). */
     public String generateOpaqueToken() {
@@ -54,7 +55,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         var rt = RefreshToken.builder()
                 .user(user)
                 .tokenHash(hash)
-                .expiresAt(Instant.now().plus(DEFAULT_TTL))
+                .expiresAt(Instant.now().plus(getRefreshTtl()))
                 .status("ACTIVE")
                 .build();
 
@@ -96,7 +97,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         var newRt = RefreshToken.builder()
                 .user(rt.getUser())
                 .tokenHash(hashNew)
-                .expiresAt(now.plus(DEFAULT_TTL))
+                .expiresAt(now.plus(getRefreshTtl()))
                 .status("ACTIVE")
                 .build();
         newRt.setFamilyId(rt.getFamilyId()); // même famille
