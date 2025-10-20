@@ -14,9 +14,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -26,36 +24,31 @@ public class UserService {
 
     private final UserRepository userRepository;
 
+    private static final java.util.List<UserRole> PRIORITY = java.util.List.of(
+            UserRole.ADMIN, UserRole.TEACHER, UserRole.PARENT, UserRole.STUDENT
+    );
+
     private UserRole extractRole(Jwt jwt) {
-        Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
-        if  (realmAccess == null) return UserRole.UNKNOWN;
+        java.util.Set<String> bag = new java.util.HashSet<>();
 
-        Object rolesObj = realmAccess.get("roles");
-        if (!(rolesObj instanceof Collection<?> roles)) {
-            return UserRole.UNKNOWN;
+        Object rolesClaim = jwt.getClaim("roles");
+        if (rolesClaim instanceof java.util.Collection<?> coll) {
+            for (Object r : coll) bag.add(String.valueOf(r).toUpperCase());
         }
+        String role = jwt.getClaimAsString("role");
+        if (role != null && !role.isBlank()) bag.add(role.toUpperCase());
 
-
-        boolean isAdmin = roles.stream().anyMatch(r -> "admin".equalsIgnoreCase(String.valueOf(r)));
-        if (isAdmin) return UserRole.ADMIN;
-
-        boolean isTeacher = roles.stream().anyMatch(r -> "teacher".equalsIgnoreCase(String.valueOf(r)));
-        if (isTeacher) return UserRole.TEACHER;
-
-        boolean isStudent = roles.stream().anyMatch(r -> "student".equalsIgnoreCase(String.valueOf(r)));
-        if (isStudent) return UserRole.STUDENT;
-
-        boolean isParent = roles.stream().anyMatch(r -> "parent".equalsIgnoreCase(String.valueOf(r)));
-        if (isParent) return UserRole.PARENT;
-
+        for (UserRole candidate : PRIORITY) {
+            if (bag.contains(candidate.name())) return candidate;
+        }
         return UserRole.UNKNOWN;
     }
 
     @Transactional
     public UserResponse updateUserTelephone(Jwt jwt, UserTelephoneRequest request) {
-        String keycloakId = jwt.getSubject();
-        User user = userRepository.findByKeycloakId(keycloakId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + keycloakId));
+        UUID userId = UUID.fromString(jwt.getSubject());
+        User user = userRepository.findByPublicId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
 
         user.setTelephone(request.getTelephone());
         userRepository.save(user);
@@ -88,7 +81,6 @@ public class UserService {
 
     private UserResponse toResponse(User user) {
         // Validated = si l'utilisateur s'est déjà connecté au moins une fois et a un id Keycloak
-        Boolean validated = user.getKeycloakId() != null && !user.getKeycloakId().isBlank();
         return new UserResponse(
                 user.getPublicId(),
                 user.getEmail(),
@@ -96,7 +88,7 @@ public class UserService {
                 user.getFirstName(),
                 user.getFirstName() + " " + user.getLastName(),
                 user.getTelephone(),
-                validated,
+                user.getStatus().toString(),
                 user.getRole() != null ? user.getRole().name() : UserRole.UNKNOWN.name()
         );
     }

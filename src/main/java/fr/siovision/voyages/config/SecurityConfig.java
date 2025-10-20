@@ -1,6 +1,7 @@
 package fr.siovision.voyages.config;
 
 import fr.siovision.voyages.application.aspect.RequestAuditFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.boot.actuate.health.HealthEndpoint;
 import org.springframework.boot.actuate.info.InfoEndpoint;
@@ -16,11 +17,16 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import javax.crypto.spec.SecretKeySpec;
+import java.util.*;
 
 @Configuration
 @EnableMethodSecurity
@@ -101,15 +107,46 @@ public class SecurityConfig {
     }
 
     @Bean
-    JwtAuthenticationConverter jwtAuthenticationConverter() {
-        var conv = new JwtAuthenticationConverter();
+    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+        JwtAuthenticationConverter conv = new JwtAuthenticationConverter();
+        conv.setJwtGrantedAuthoritiesConverter(jwt -> {
+            java.util.Set<org.springframework.security.core.GrantedAuthority> out = new java.util.HashSet<>();
 
-        var delegate = new JwtGrantedAuthoritiesConverter();
-        delegate.setAuthoritiesClaimName("roles");
-        delegate.setAuthorityPrefix("ROLE_");
+            // roles: ["ADMIN", "TEACHER", ...]
+            Object rolesClaim = jwt.getClaim("roles");
+            if (rolesClaim instanceof java.util.Collection<?> coll) {
+                for (Object r : coll) {
+                    String role = String.valueOf(r);
+                    out.add(new org.springframework.security.core.authority.SimpleGrantedAuthority(
+                            role.startsWith("ROLE_") ? role : "ROLE_" + role
+                    ));
+                }
+            }
 
-        conv.setJwtGrantedAuthoritiesConverter(delegate);
+            // role: "ADMIN"
+            String role = jwt.getClaimAsString("role");
+            if (role != null && !role.isBlank()) {
+                out.add(new org.springframework.security.core.authority.SimpleGrantedAuthority(
+                        role.startsWith("ROLE_") ? role : "ROLE_" + role
+                ));
+            }
+
+            return out;
+        });
         return conv;
+    }
+
+    @Bean
+    public JwtDecoder jwtDecoder(
+        @Value("${app.jwt.secret-key}") String secret
+    ) {
+        byte[] keyBytes = Base64.getDecoder().decode(secret);
+
+        var key = new SecretKeySpec(keyBytes, "HmacSHA256");
+
+        return NimbusJwtDecoder.withSecretKey(key)
+                .macAlgorithm(MacAlgorithm.HS256)  // ton header alg = HS256
+                .build();
     }
 
     @Bean
