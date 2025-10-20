@@ -88,7 +88,7 @@ public class UserService {
                 user.getFirstName(),
                 user.getFirstName() + " " + user.getLastName(),
                 user.getTelephone(),
-                user.getStatus().toString(),
+                user.getStatus() != null ? user.getStatus().name() : "",
                 user.getRole() != null ? user.getRole().name() : UserRole.UNKNOWN.name()
         );
     }
