@@ -28,7 +28,10 @@ public class Trip {
     private UUID publicId = UUID.randomUUID();
 
     private String title;
+
+    @Column(columnDefinition = "TEXT")
     private String description;
+
     private String destination;
 
     private Integer totalPrice; // en centimes d'euros
