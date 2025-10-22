@@ -1,6 +1,7 @@
 package fr.siovision.voyages.application.service.impl;
 
 import fr.siovision.voyages.application.service.RefreshTokenService;
+import fr.siovision.voyages.application.service.RotateResult;
 import fr.siovision.voyages.domain.model.RefreshToken;
 import fr.siovision.voyages.domain.model.User;
 import fr.siovision.voyages.infrastructure.repository.RefreshTokenRepository;
@@ -66,7 +67,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
     /** Rotation : consomme un refresh et en émet un nouveau (renvoie le nouveau token brut). */
     @Transactional
-    public String rotate(String presentedRefresh) {
+    public RotateResult rotate(String presentedRefresh) {
         var h = sha256(presentedRefresh);
 
         // Lock pessimiste pour éviter double utilisation concurrente
@@ -107,7 +108,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         rt.setReplacedBy(newRt);
         repo.save(rt);
 
-        return rawNew;
+        return new RotateResult(rt.getUser(), rawNew);
     }
 
     /** Révoque le refresh présenté (logout de l’appareil courant). */

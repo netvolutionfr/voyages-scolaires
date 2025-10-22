@@ -1,7 +1,6 @@
 package fr.siovision.voyages.web;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.oauth2.jwt.Jwt;
 import com.webauthn4j.data.PublicKeyCredentialCreationOptions;
 import com.webauthn4j.data.PublicKeyCredentialRequestOptions;
 import fr.siovision.voyages.application.service.*;
@@ -11,7 +10,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,7 +23,6 @@ public class AuthController {
     private final AuthenticationService authenticationService;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
-    private final UserService userService;
 
     @Value("${app.jwt.access-ttl-seconds}")
     long accessTtlSec;
@@ -72,12 +69,14 @@ public class AuthController {
     }
 
     @PostMapping("/auth/refresh")
-    public ResponseEntity<RefreshResponse> refresh(@RequestBody RefreshRequest req, @AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<RefreshResponse> refresh(@RequestBody RefreshRequest req) {
         // 1) Rotation sécurisée du refresh
-        String newRefresh = refreshTokenService.rotate(req.refresh_token());
+        RotateResult rotateResult = refreshTokenService.rotate(req.refresh_token());
+
+        String newRefresh = rotateResult.newRefreshToken();
+        User currentUser = rotateResult.user();
 
         // 2) Générer un nouvel access
-        User currentUser = userService.getUserByJwt(jwt);
         String newAccess = jwtService.generateAccessToken(currentUser);
 
         // 3) Réponse
