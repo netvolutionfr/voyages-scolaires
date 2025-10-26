@@ -1,11 +1,14 @@
 package fr.siovision.voyages.domain.model;
 
+import fr.siovision.voyages.infrastructure.converter.CryptoConverter;
+import fr.siovision.voyages.infrastructure.converter.CryptoDateConverter;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -27,14 +30,20 @@ public class User {
     private UUID publicId = UUID.randomUUID();
 
     @Column(unique = true)
-    String keycloakId; // `sub` du token JWT
-
-    @Column(unique = true)
     String email; // email de l'utilisateur, utilisé pour l'authentification
     String lastName; // nom de famille de l'utilisateur
     String firstName; // prénom de l'utilisateur
     String displayName; // nom complet affiché (prénom + nom) utilisé par iOS lors de la création de passkey
-    String telephone;
+
+    @Convert(converter = CryptoConverter.class)
+    private String gender; // "M", "F", "N"
+
+    @Convert(converter = CryptoConverter.class)
+    private String telephone;
+
+    @Convert(converter = CryptoDateConverter.class)
+    @Column(columnDefinition = "TEXT")
+    private LocalDate birthDate;
 
     @Enumerated(EnumType.STRING)
     UserRole role; // PARENT, STUDENT, ADMIN
@@ -42,11 +51,26 @@ public class User {
     @Enumerated(EnumType.STRING)
     UserStatus status; // ACTIVE, INACTIVE, PENDING
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name="legal_guardian_user_id") // parent ou tuteur légal, null si majeur
+    private User legalGuardian;
+
+    @OneToMany
+    private List<Document> documents;
+
+    @OneToMany(mappedBy = "user")
+    private List<TripUser> trips;
+
     LocalDate consentGivenAt;
     String consentText;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<TripPreference> tripPreferences = new HashSet<>();
+
+    // Section
+    @ManyToOne
+    @JoinColumn(name = "section_id") // Foreign key vers la table Section, nullable si l'utilisateur n'est pas un élève
+    private Section section;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

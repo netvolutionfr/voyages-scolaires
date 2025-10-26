@@ -4,6 +4,7 @@ import fr.siovision.voyages.domain.model.User;
 import fr.siovision.voyages.domain.model.UserRole;
 import fr.siovision.voyages.infrastructure.dto.UserResponse;
 import fr.siovision.voyages.infrastructure.dto.UserTelephoneRequest;
+import fr.siovision.voyages.infrastructure.mapper.UserMapper;
 import fr.siovision.voyages.infrastructure.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,7 @@ import java.util.UUID;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     private static final java.util.List<UserRole> PRIORITY = java.util.List.of(
             UserRole.ADMIN, UserRole.TEACHER, UserRole.PARENT, UserRole.STUDENT
@@ -53,20 +55,19 @@ public class UserService {
         user.setTelephone(request.getTelephone());
         userRepository.save(user);
 
-        return toResponse(user);
+        return userMapper.toDTO(user);
     }
 
     @Transactional(readOnly = true)
     public Page<UserResponse> getAllUsers(Jwt jwt, List<UserRole> roles, Pageable pageable) {
-        log.info("Listing users with filter '{}', page: {}, size: {}", roles, pageable.getPageNumber(), pageable.getPageSize());
         // Vérification d'autorisation minimale: ADMIN requis
         if (extractRole(jwt) != UserRole.ADMIN) {
             if (extractRole(jwt) == UserRole.TEACHER) {
                 // Récupérer uniquement les utilisateurs de type TEACHER
                 Page<User> teachers = userRepository.findByRole(UserRole.TEACHER, pageable);
-                return teachers.map(this::toResponse);
+                return teachers.map(userMapper::toDTO);
             } else {
-                log.warn("Tentative d'accès à la liste des utilisateurs par un utilisateur sans rôle ADMIN (Keycloak ID: {}, rôle: {})", jwt.getSubject(), extractRole(jwt));
+                log.warn("Tentative d'accès à la liste des utilisateurs par un utilisateur sans rôle ADMIN (User ID: {}, rôle: {})", jwt.getSubject(), extractRole(jwt));
             }
             throw new AccessDeniedException("Accès refusé: rôle ADMIN requis pour lister les utilisateurs.");
         }
@@ -76,22 +77,9 @@ public class UserService {
         }
         Page<User> users = userRepository.findByRoleIn(roles, pageable);
         return users
-                .map(this::toResponse);
+                .map(userMapper::toDTO);
     }
 
-    private UserResponse toResponse(User user) {
-        // Validated = si l'utilisateur s'est déjà connecté au moins une fois et a un id Keycloak
-        return new UserResponse(
-                user.getPublicId(),
-                user.getEmail(),
-                user.getLastName(),
-                user.getFirstName(),
-                user.getFirstName() + " " + user.getLastName(),
-                user.getTelephone(),
-                user.getStatus() != null ? user.getStatus().name() : "",
-                user.getRole() != null ? user.getRole().name() : UserRole.UNKNOWN.name()
-        );
-    }
 
     @Transactional
     public User getUserByJwt(Jwt jwt) {

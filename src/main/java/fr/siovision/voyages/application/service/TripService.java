@@ -42,7 +42,6 @@ public class TripService {
         trip.setTitle(tripUpsertRequest.getTitle());
         trip.setDescription(tripUpsertRequest.getDescription());
         trip.setDestination(tripUpsertRequest.getDestination());
-        trip.setTotalPrice(tripUpsertRequest.getTotalPrice());
         trip.setFamilyContribution(tripUpsertRequest.getFamilyContribution());
         trip.setMaxParticipants(tripUpsertRequest.getMaxParticipants());
         trip.setMinParticipants(tripUpsertRequest.getMinParticipants());
@@ -50,8 +49,8 @@ public class TripService {
         // Parsing sécurisée des dates
         trip.setDepartureDate(tripUpsertRequest.getTripDates().getFrom());
         trip.setReturnDate(tripUpsertRequest.getTripDates().getTo());
-        trip.setRegistrationOpeningDate(tripUpsertRequest.getRegistrationPeriod().getFrom());
-        trip.setRegistrationClosingDate(tripUpsertRequest.getRegistrationPeriod().getTo());
+        trip.setRegistrationOpeningDate(tripUpsertRequest.getRegistrationDates().getFrom());
+        trip.setRegistrationClosingDate(tripUpsertRequest.getRegistrationDates().getTo());
 
         // Mode sondage
         trip.setPoll(tripUpsertRequest.isPoll());
@@ -82,7 +81,6 @@ public class TripService {
         }
 
         trip.setCoverPhotoUrl(tripUpsertRequest.getCoverPhotoUrl());
-        trip.setTotalPrice(tripUpsertRequest.getTotalPrice());
 
         // Clonage sécurisé des formalités
         cloneFormalitesFromTemplate(trip, country.getCountryFormalities());
@@ -102,7 +100,6 @@ public class TripService {
         updated.setTitle(tripUpsertRequest.getTitle());
         updated.setDescription(tripUpsertRequest.getDescription());
         updated.setDestination(tripUpsertRequest.getDestination());
-        updated.setTotalPrice(tripUpsertRequest.getTotalPrice());
         updated.setFamilyContribution(tripUpsertRequest.getFamilyContribution());
         updated.setMaxParticipants(tripUpsertRequest.getMaxParticipants());
         updated.setMinParticipants(tripUpsertRequest.getMinParticipants());
@@ -110,8 +107,8 @@ public class TripService {
         // Parsing sécurisée des dates
         updated.setDepartureDate(tripUpsertRequest.getTripDates().getFrom());
         updated.setReturnDate(tripUpsertRequest.getTripDates().getTo());
-        updated.setRegistrationOpeningDate(tripUpsertRequest.getRegistrationPeriod().getFrom());
-        updated.setRegistrationClosingDate(tripUpsertRequest.getRegistrationPeriod().getTo());
+        updated.setRegistrationOpeningDate(tripUpsertRequest.getRegistrationDates().getFrom());
+        updated.setRegistrationClosingDate(tripUpsertRequest.getRegistrationDates().getTo());
 
         // Mode sondage
         updated.setPoll(tripUpsertRequest.isPoll());
@@ -142,7 +139,6 @@ public class TripService {
         }
 
         updated.setCoverPhotoUrl(tripUpsertRequest.getCoverPhotoUrl());
-        updated.setTotalPrice(tripUpsertRequest.getTotalPrice());
 
         // Note : les formalités existantes ne sont pas modifiées ici. La gestion des formalités
         // ajoutées manuellement ou via le template doit être faite via des endpoints dédiés.
@@ -218,11 +214,11 @@ public class TripService {
     // --- Méthodes utilitaires privées ---
 
     private void validateDatesPresent(TripUpsertRequest dto) {
-        if (dto.getTripDates() == null || dto.getRegistrationPeriod() == null) {
+        if (dto.getTripDates() == null || dto.getRegistrationDates() == null) {
             throw new IllegalArgumentException("Date ranges must be provided.");
         }
         if (dto.getTripDates().getFrom() == null || dto.getTripDates().getTo() == null
-                || dto.getRegistrationPeriod().getFrom() == null || dto.getRegistrationPeriod().getTo() == null) {
+                || dto.getRegistrationDates().getFrom() == null || dto.getRegistrationDates().getTo() == null) {
             throw new IllegalArgumentException("All date fields must be provided and valid.");
         }
     }

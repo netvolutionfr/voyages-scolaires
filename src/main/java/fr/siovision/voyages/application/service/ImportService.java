@@ -4,7 +4,6 @@ import fr.siovision.voyages.domain.model.*;
 import fr.siovision.voyages.infrastructure.dto.ImportResult;
 import fr.siovision.voyages.infrastructure.dto.ImportRow;
 import fr.siovision.voyages.infrastructure.repository.ParentChildRepository;
-import fr.siovision.voyages.infrastructure.repository.ParticipantRepository;
 import fr.siovision.voyages.infrastructure.repository.SectionRepository;
 import fr.siovision.voyages.infrastructure.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +24,6 @@ import java.util.List;
 public class ImportService {
 
     private final UserRepository userRepo;
-    private final ParticipantRepository participantRepo;
     private final ParentChildRepository parentChildRepo;
     private final SectionRepository sectionRepo;
 
@@ -113,19 +111,8 @@ public class ImportService {
                     u.setLastName(row.getLastName().trim());
                     u.setFirstName(row.getFirstName().trim());
                     u.setTelephone(emptyToNull(row.getTelephone()));
+                    u.setGender(row.getGender());
                     u.setRole(UserRole.STUDENT);
-                    return userRepo.save(u);
-                });
-
-        // 3) upsert Participant (profil élève)
-        Participant participant = participantRepo.findByStudentAccount_Email(studentEmail)
-                .orElseGet(() -> {
-                    Participant p = new Participant();
-                    p.setLastName(row.getLastName().trim());
-                    p.setFirstName(row.getFirstName().trim());
-                    p.setGender(row.getGender());
-                    p.setEmail(studentEmail);
-                    p.setTelephone(emptyToNull(row.getTelephone()));
                     Section section = sectionRepo.findByLabel(row.getSection().trim())
                             .orElseGet(() -> {
                                 Section s = new Section();
@@ -133,37 +120,31 @@ public class ImportService {
                                 return sectionRepo.save(s);
                             });
 
-                    p.setSection(section);
+                    u.setSection(section);
+
                     // Parser dateNaissance
                     if (row.getBirthDate() != null && !row.getBirthDate().isBlank()) {
                         try {
-                            p.setBirthDate(java.time.LocalDate.parse(row.getBirthDate().trim()));
+                            u.setBirthDate(java.time.LocalDate.parse(row.getBirthDate().trim()));
                         } catch (Exception e) {
                             throw new IllegalArgumentException("Invalid birth date for " + studentEmail + ": " + row.getBirthDate());
                         }
                     }
-                    p.setStudentAccount(studentUser); // obligatoire par conception
-                    return participantRepo.save(p);
-                });
 
-        // Si déjà existant, mettre à jour champs utiles
-        participant.setLastName(row.getLastName().trim());
-        participant.setFirstName(row.getFirstName().trim());
-        participant.setTelephone(emptyToNull(row.getTelephone()));
-        participantRepo.save(participant);
+                    return userRepo.save(u);
+                });
 
         // 4) parents (facultatifs) → upsert User(PARENT) + liens ParentChild
         User parent1 = upsertParent(row.getParent1Email(), row.getParent1LastName(), row.getParent1FirstName(), row.getParent1Tel());
         User parent2 = upsertParent(row.getParent2Email(), row.getParent2LastName(), row.getParent2FirstName(), row.getParent2Tel());
 
         // 5) liens ParentChild (uniques)
-        if (parent1 != null) linkParentToChildOnce(parent1, participant); // ou MERE/PERE si tu sais inférer
-        if (parent2 != null) linkParentToChildOnce(parent2, participant);
+        if (parent1 != null) linkParentToChildOnce(parent1, studentUser); // ou MERE/PERE si tu sais inférer
+        if (parent2 != null) linkParentToChildOnce(parent2, studentUser);
 
         // 6) tuteur légal principal = parent1 si fourni
-        participant.setLegalGuardian(parent1 != null ? parent1 : participant.getLegalGuardian());
-        participantRepo.save(participant);
-
+        studentUser.setLegalGuardian(parent1 != null ? parent1 : studentUser.getLegalGuardian());
+        userRepo.save(studentUser);
     }
 
     @Transactional
@@ -214,7 +195,7 @@ public class ImportService {
         return userRepo.save(u);
     }
 
-    private void linkParentToChildOnce(User parent, Participant child) {
+    private void linkParentToChildOnce(User parent, User child) {
         if (!parentChildRepo.existsByParentIdAndChildId(parent.getId(), child.getId())) {
             ParentChild pc = new ParentChild();
             pc.setParent(parent);

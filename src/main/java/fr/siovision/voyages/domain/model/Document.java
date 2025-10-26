@@ -38,7 +38,7 @@ public class Document {
 
     @ManyToOne
     @JoinColumn(nullable = false)
-    private TripParticipant tripParticipant;
+    private TripUser tripUser;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -1,2 +1,0 @@
-ALTER TABLE trip
-ALTER COLUMN description TYPE TEXT;

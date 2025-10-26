@@ -20,11 +20,11 @@ public class CurrentUserService {
             throw new IllegalStateException("User not authenticated or invalid token");
         }
 
-        String userId = jwt.getSubject(); // "sub" du JWT = ID Keycloak
+        String userId = jwt.getSubject(); // "sub" du JWT = ID utilisateur
 
         return userRepository.findByPublicId(java.util.UUID.fromString(userId))
                 .orElseThrow(() -> new IllegalStateException(
-                        "No user found with Keycloak ID: " + userId
+                        "No user found with user ID: " + userId
                 ));
     }
 }

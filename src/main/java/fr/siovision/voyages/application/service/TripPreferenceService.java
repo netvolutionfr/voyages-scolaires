@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
+import java.util.UUID;
+
 @Service
 @RequiredArgsConstructor
 public class TripPreferenceService {
@@ -18,9 +20,9 @@ public class TripPreferenceService {
     private final TripRepository tripRepository;
 
     public String getVoyagePref(Jwt jwt, Long tripId) {
-        String keycloakId = jwt.getSubject();
-        User user = userRepository.findByKeycloakId(keycloakId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + keycloakId));
+        String userId = jwt.getSubject();
+        User user = userRepository.findByPublicId(UUID.fromString(userId))
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
 
         return tripPreferenceRepository.findByTripIdAndUserPublicId(tripId, user.getPublicId())
                 .map(TripPreference::getInterest)
@@ -38,9 +40,9 @@ public class TripPreferenceService {
     }
 
     public boolean updateVoyagePref(Jwt jwt, Long tripId, String interest) {
-        String keycloakId = jwt.getSubject();
-        User user = userRepository.findByKeycloakId(keycloakId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + keycloakId));
+        String userId = jwt.getSubject();
+        User user = userRepository.findByPublicId(UUID.fromString(userId))
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
 
         TripPreference trippreference = tripPreferenceRepository.findByTripIdAndUserPublicId(tripId, user.getPublicId())
                 .orElseGet(() -> {

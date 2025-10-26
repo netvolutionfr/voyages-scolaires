@@ -20,5 +20,5 @@ public class ParentChild {
     private User parent; // role = PARENT
 
     @ManyToOne(optional=false) @JoinColumn(name="child_id")
-    private Participant child;
+    private User child;
 }

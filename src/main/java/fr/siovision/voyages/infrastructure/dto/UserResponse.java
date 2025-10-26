@@ -15,7 +15,9 @@ public class UserResponse {
     private String lastName;
     private String firstName;
     private String fullName;
+    private String gender;
     private String telephone;
+    private String section;
     private String status;
     private String role; // ADMIN, PARTICIPANT, ORGANISATEUR
 }

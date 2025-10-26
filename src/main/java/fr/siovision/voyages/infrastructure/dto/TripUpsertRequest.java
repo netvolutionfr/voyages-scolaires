@@ -1,6 +1,5 @@
 package fr.siovision.voyages.infrastructure.dto;
 
-import fr.siovision.voyages.domain.model.Sector;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -21,10 +20,6 @@ public class TripUpsertRequest {
     private String title;
     private String description;
     private String destination;
-
-    /** Prix total du voyage (centimes d’€) */
-    @PositiveOrZero
-    private Integer totalPrice;
 
     /** Participation des familles (centimes d’€) */
     @PositiveOrZero
@@ -49,7 +44,7 @@ public class TripUpsertRequest {
     private Integer maxParticipants;
 
     /** Période d’inscription (éventuellement null) */
-    private DateRangeDTO registrationPeriod;
+    private DateRangeDTO registrationDates;
 
     /** Organisateurs (prof/admin) */
     @NotNull
@@ -57,7 +52,4 @@ public class TripUpsertRequest {
 
     /** Sections concernées (peut être vide) */
     private List<UUID> sectionIds = new ArrayList<>();
-
-    /** Secteurs (peut être vide) */
-    private Set<Sector> sectors = new HashSet<>();
 }

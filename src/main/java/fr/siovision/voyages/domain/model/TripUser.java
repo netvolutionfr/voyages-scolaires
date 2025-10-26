@@ -12,7 +12,7 @@ import java.util.List;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
-public class TripParticipant {
+public class TripUser {
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "cust_seq")
     @SequenceGenerator(name = "cust_seq", sequenceName = "cust_seq")
@@ -30,9 +30,9 @@ public class TripParticipant {
     private Trip trip;
 
     @ManyToOne
-    private Participant participant;
+    private User user;
 
-    @OneToMany(mappedBy = "tripParticipant", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "tripUser", cascade = CascadeType.ALL)
     private List<Document> documents;
 
 }

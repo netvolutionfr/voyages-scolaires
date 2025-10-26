@@ -34,7 +34,6 @@ public class Trip {
 
     private String destination;
 
-    private Integer totalPrice; // en centimes d'euros
     private Integer familyContribution; // en centimes d'euros
     @ManyToOne(fetch = FetchType.LAZY)
     private Country country;
@@ -52,17 +51,10 @@ public class Trip {
     // ——— Relations
     /** Élèves inscrits */
     @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
-    private List<TripParticipant> participants;
+    private List<TripUser> users;
 
     @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
     private List<Section> sections;
-
-    /** Secteurs (Cycle bac, Post-bac, …) éventuellement vide */
-    @ElementCollection(targetClass = Sector.class, fetch = FetchType.EAGER)
-    @CollectionTable(name = "trip_sectors", joinColumns = @JoinColumn(name = "trip_id"))
-    @Enumerated(EnumType.STRING)
-    @Column(name = "sector")
-    private Set<Sector> sectors = new HashSet<>();
 
     @ManyToMany(cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
     private List<User> chaperones; // accompagnateurs
