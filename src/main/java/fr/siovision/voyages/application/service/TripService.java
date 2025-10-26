@@ -149,6 +149,13 @@ public class TripService {
 
     @Transactional(readOnly = true)
     public Page<TripDetailDTO> list(Pageable pageable) {
+        // if student, only return trips with sections matching student's sections
+        User currentUser = currentUserService.getCurrentUser();
+        if (currentUser.getRole() == UserRole.STUDENT) {
+            Section userSection = currentUser.getSection();
+            return tripRepository.findBySectionsContaining(userSection, pageable)
+                    .map(this::mapToTripDTO);
+        }
         return tripRepository.findAll(pageable).map(this::mapToTripDTO);
     }
 
@@ -164,8 +171,8 @@ public class TripService {
         List<ChaperoneDTO> organisateurs = trip.getChaperones().stream()
                 .map(org -> new ChaperoneDTO(
                         org.getPublicId(),
-                        org.getFirstName(),
                         org.getLastName(),
+                        org.getFirstName(),
                         org.getEmail(),
                         org.getTelephone()
                 ))
@@ -282,8 +289,8 @@ public class TripService {
         List<ChaperoneDTO> chaperones = trip.getChaperones().stream()
                 .map(org -> new ChaperoneDTO(
                         org.getPublicId(),
-                        org.getFirstName(),
                         org.getLastName(),
+                        org.getFirstName(),
                         org.getEmail(),
                         org.getTelephone()
                 ))

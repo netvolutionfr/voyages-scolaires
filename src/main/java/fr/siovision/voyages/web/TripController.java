@@ -17,13 +17,13 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/trips")
 public class TripController {
     @Autowired
-    private TripService voyageService;
+    private TripService tripService;
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     public ResponseEntity<String> createTrip(@RequestBody TripUpsertRequest tripRequest) {
         // Appeler le service pour créer un nouveau voyage
-        Trip saved = voyageService.createTrip(tripRequest);
+        Trip saved = tripService.createTrip(tripRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved.getId().toString());
     }
 
@@ -31,7 +31,7 @@ public class TripController {
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     public ResponseEntity<String> updateTrip(@PathVariable Long id, @RequestBody TripUpsertRequest tripRequest) {
         // Mettre à jour une section existante
-        Trip updatedVoyage = voyageService.updateTrip(id, tripRequest);
+        Trip updatedVoyage = tripService.updateTrip(id, tripRequest);
         return ResponseEntity.status(HttpStatus.OK).body(updatedVoyage.getId().toString());
     }
 
@@ -40,7 +40,7 @@ public class TripController {
     public ResponseEntity<Page<TripDetailDTO>> list(
             @PageableDefault(size = 20, sort = "departureDate", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        Page<TripDetailDTO> trips = voyageService.list(pageable);
+        Page<TripDetailDTO> trips = tripService.list(pageable);
         return ResponseEntity.ok(trips);
     }
 
@@ -48,7 +48,7 @@ public class TripController {
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT', 'PARENT')")
     @RequestMapping("/{id}")
     public ResponseEntity<TripDetailDTO> getTripById(@PathVariable Long id) {
-        TripDetailDTO trip = voyageService.getTripById(id);
+        TripDetailDTO trip = tripService.getTripById(id);
         return ResponseEntity.ok(trip);
     }
 }
