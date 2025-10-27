@@ -55,13 +55,13 @@ CREATE TABLE document_type
 
 CREATE TABLE otp_tokens
 (
-    id          BIGINT       NOT NULL,
-    user_id     BIGINT       NOT NULL,
-    purpose     VARCHAR(40)  NOT NULL,
-    code_hash   VARCHAR(255) NOT NULL,
+    id          BIGINT                      NOT NULL,
+    user_id     BIGINT                      NOT NULL,
+    purpose     VARCHAR(40)                 NOT NULL,
+    code_hash   VARCHAR(255)                NOT NULL,
     expires_at  TIMESTAMP WITHOUT TIME ZONE NOT NULL,
-    status      VARCHAR(20)  NOT NULL,
-    attempts    INTEGER      NOT NULL,
+    status      VARCHAR(20)                 NOT NULL,
+    attempts    INTEGER                     NOT NULL,
     created_at  TIMESTAMP WITHOUT TIME ZONE NOT NULL,
     consumed_at TIMESTAMP WITHOUT TIME ZONE,
     CONSTRAINT pk_otp_tokens PRIMARY KEY (id)
@@ -116,6 +116,19 @@ CREATE TABLE section
     created_at  TIMESTAMP WITHOUT TIME ZONE,
     updated_at  TIMESTAMP WITHOUT TIME ZONE,
     CONSTRAINT pk_section PRIMARY KEY (id)
+);
+
+CREATE TABLE student_health_form
+(
+    id          UUID                        NOT NULL,
+    student_id  BIGINT                      NOT NULL,
+    payload     TEXT,
+    signed_at   TIMESTAMP WITHOUT TIME ZONE,
+    valid_until TIMESTAMP WITHOUT TIME ZONE,
+    created_at  TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    updated_at  TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    version     BIGINT                      NOT NULL,
+    CONSTRAINT pk_student_health_form PRIMARY KEY (id)
 );
 
 CREATE TABLE trip
@@ -325,6 +338,11 @@ ALTER TABLE refresh_tokens
     ADD CONSTRAINT FK_REFRESH_TOKENS_ON_USER FOREIGN KEY (user_id) REFERENCES users (id);
 
 CREATE INDEX idx_refresh_user ON refresh_tokens (user_id);
+
+ALTER TABLE student_health_form
+    ADD CONSTRAINT FK_STUDENT_HEALTH_FORM_ON_STUDENT FOREIGN KEY (student_id) REFERENCES users (id);
+
+CREATE INDEX idx_shf_student ON student_health_form (student_id);
 
 ALTER TABLE trip_user
     ADD CONSTRAINT FK_TRIPUSER_ON_TRIP FOREIGN KEY (trip_id) REFERENCES trip (id);
