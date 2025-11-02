@@ -46,7 +46,7 @@ public class DocumentUploadService {
                 documentRepository.findFirstByUserIdAndDocumentTypeIdOrderByCreatedAtDesc(user.getId(), dt.getId());
 
         // Upload chiffré → S3
-        final String objectKey = storageService.buildEncryptedKey(originalName);
+        final String objectKey = storageService.buildEncryptedKey(user.getPublicId(), originalName);
         StorageService.EncryptedUploadResult res;
         try (InputStream in = new ByteArrayInputStream(bytes)) {
             res = storageService.putEncrypted(objectKey, in, mime);

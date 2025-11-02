@@ -12,7 +12,9 @@ import software.amazon.awssdk.services.s3.model.*;
 
 import javax.crypto.SecretKey;
 import java.io.InputStream;
+import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -30,9 +32,32 @@ public class StorageService {
             long ciphertextSize
     ) {}
 
-    public String buildEncryptedKey(String originalFilename) {
-        String safe = (originalFilename == null ? "file" : originalFilename).replaceAll("\\s+", "_");
-        return "docs/" + java.util.UUID.randomUUID() + "-" + safe;
+    /**
+     * Génère une clé S3 sécurisée et non révélatrice de données personnelles.
+     * Exemple de résultat :
+     *   docs/2f4d9c53-8c8b-4d7f-a4f8-b5f14cb8bb28/8c37d781-9c1a-46fd-8a4e-13fd4b1c9b92.pdf
+     */
+    public String buildEncryptedKey(UUID userPublicId, String originalFilename) {
+        // Extraire l’extension en conservant le point (".pdf", ".jpg", etc.)
+        String extension = "";
+        if (originalFilename != null) {
+            int dot = originalFilename.lastIndexOf('.');
+            if (dot >= 0 && dot < originalFilename.length() - 1) {
+                extension = originalFilename.substring(dot).toLowerCase(Locale.ROOT);
+                // On limite aux extensions ASCII, pour éviter les caractères exotiques
+                if (!extension.matches("^\\.[a-z0-9]{1,6}$")) {
+                    extension = "";
+                }
+            }
+        }
+
+        // Dossier par utilisateur (UUID stable)
+        String userFolder = (userPublicId != null ? userPublicId.toString() : "anonymous");
+
+        // Nom technique unique (UUID v4)
+        String randomName = UUID.randomUUID().toString();
+
+        return String.format("docs/%s/%s%s", userFolder, randomName, extension);
     }
 
     public EncryptedUploadResult putEncrypted(String objectKey, InputStream plaintext, String origMime) throws Exception {
