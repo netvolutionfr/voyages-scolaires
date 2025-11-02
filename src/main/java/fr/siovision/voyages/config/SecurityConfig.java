@@ -71,7 +71,7 @@ public class SecurityConfig {
 
                         // Règles métiers existantes
                         .requestMatchers("/api/participants/**").hasAnyRole("ADMIN","PARENT")
-                        .requestMatchers("/api/files/**").hasAnyRole("ADMIN","TEACHER")
+                        .requestMatchers("/api/files/**").hasAnyRole("ADMIN","TEACHER", "STUDENT", "PARENT")
                         .requestMatchers("/api/admin/**").hasAnyRole("ADMIN")
                         .requestMatchers("/**").authenticated()
                 )
@@ -96,7 +96,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/participants/**").hasAnyRole("ADMIN","PARENT")
-                        .requestMatchers("/api/files/**").hasAnyRole("ADMIN","TEACHER")
+                        .requestMatchers("/api/files/**").hasAnyRole("ADMIN","TEACHER", "STUDENT", "PARENT")
                         .requestMatchers("/api/admin/**").hasAnyRole("ADMIN")
                         .requestMatchers("/**").authenticated()
                 )

@@ -58,7 +58,7 @@ public class User {
     @OneToMany
     private List<Document> documents;
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<TripUser> trips;
 
     LocalDate consentGivenAt;

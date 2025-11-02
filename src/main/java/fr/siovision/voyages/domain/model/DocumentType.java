@@ -18,4 +18,8 @@ public class DocumentType {
     private String abr; // Abréviation du type de document (ex: "cni", "passeport", "visa")
     private String label; // Nom du document (ex: "Autorisation parentale", "Certificat médical")
     private String description; // Description du document (optionnel)
+
+    @Column(nullable = false, length = 16)
+    @Enumerated(EnumType.STRING)
+    private DocumentScope scope = DocumentScope.TRIP;
 }

@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Getter
@@ -22,7 +21,7 @@ public class TripUser {
 
     private LocalDateTime registrationDate;
     private LocalDateTime decisionDate;
-    private RegistrationStatus registrationStatus;
+    private TripRegistrationStatus registrationStatus;
     private String decisionMessage;
     private String adminNotes;
 
@@ -31,8 +30,4 @@ public class TripUser {
 
     @ManyToOne
     private User user;
-
-    @OneToMany(mappedBy = "tripUser", cascade = CascadeType.ALL)
-    private List<Document> documents;
-
 }

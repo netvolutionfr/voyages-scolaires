@@ -26,31 +26,37 @@ CREATE TABLE country_formality_templates
     CONSTRAINT pk_country_formality_templates PRIMARY KEY (id)
 );
 
-CREATE TABLE document
-(
-    id               BIGINT NOT NULL,
-    file_name        VARCHAR(255),
-    file_type        VARCHAR(255),
-    file_size        BIGINT,
-    file_url         VARCHAR(255),
-    document_type_id BIGINT NOT NULL,
-    document_status  VARCHAR(255),
-    file_number      VARCHAR(255),
-    delivery_date    date,
-    expiration_date  date,
-    trip_user_id     BIGINT NOT NULL,
-    created_at       TIMESTAMP WITHOUT TIME ZONE,
-    updated_at       TIMESTAMP WITHOUT TIME ZONE,
-    CONSTRAINT pk_document PRIMARY KEY (id)
-);
-
 CREATE TABLE document_type
 (
-    id          BIGINT NOT NULL,
+    id          BIGINT      NOT NULL,
     abr         VARCHAR(255),
     label       VARCHAR(255),
     description VARCHAR(255),
+    scope       VARCHAR(16) NOT NULL,
     CONSTRAINT pk_documenttype PRIMARY KEY (id)
+);
+
+CREATE TABLE documents
+(
+    id                BIGINT       NOT NULL,
+    public_id         UUID         NOT NULL,
+    original_filename VARCHAR(255),
+    mime              VARCHAR(128),
+    size              BIGINT,
+    sha256            VARCHAR(88),
+    object_key        VARCHAR(512) NOT NULL,
+    document_type_id  BIGINT       NOT NULL,
+    document_status   VARCHAR(32)  NOT NULL,
+    file_number       VARCHAR(64),
+    dek_wrapped       VARCHAR(512),
+    dek_iv            VARCHAR(32),
+    iv                VARCHAR(32),
+    delivery_date     date,
+    expiration_date   date,
+    user_id           BIGINT       NOT NULL,
+    created_at        TIMESTAMP WITHOUT TIME ZONE,
+    updated_at        TIMESTAMP WITHOUT TIME ZONE,
+    CONSTRAINT pk_documents PRIMARY KEY (id)
 );
 
 CREATE TABLE otp_tokens
@@ -219,6 +225,22 @@ CREATE TABLE trip_users
     users_id BIGINT NOT NULL
 );
 
+CREATE TABLE user_documents
+(
+    id               BIGINT       NOT NULL,
+    public_id        UUID         NOT NULL,
+    user_id          BIGINT       NOT NULL,
+    document_type_id BIGINT       NOT NULL,
+    object_key       VARCHAR(512) NOT NULL,
+    size             BIGINT,
+    mime             VARCHAR(255),
+    sha256           VARCHAR(255),
+    status           VARCHAR(32)  NOT NULL,
+    created_at       TIMESTAMP WITHOUT TIME ZONE,
+    updated_at       TIMESTAMP WITHOUT TIME ZONE,
+    CONSTRAINT pk_user_documents PRIMARY KEY (id)
+);
+
 CREATE TABLE users
 (
     id                     BIGINT NOT NULL,
@@ -267,6 +289,9 @@ ALTER TABLE trip_preferences
 ALTER TABLE parent_child
     ADD CONSTRAINT uc_d8c42c6b975ff4507ae9dbd9f UNIQUE (parent_id, child_id);
 
+ALTER TABLE documents
+    ADD CONSTRAINT uc_documents_publicid UNIQUE (public_id);
+
 ALTER TABLE refresh_tokens
     ADD CONSTRAINT uc_refresh_tokens_replaced_by UNIQUE (replaced_by_id);
 
@@ -282,6 +307,9 @@ ALTER TABLE section
 ALTER TABLE trip
     ADD CONSTRAINT uc_trip_publicid UNIQUE (public_id);
 
+ALTER TABLE user_documents
+    ADD CONSTRAINT uc_user_documents_publicid UNIQUE (public_id);
+
 ALTER TABLE users_documents
     ADD CONSTRAINT uc_users_documents_documents UNIQUE (documents_id);
 
@@ -293,6 +321,10 @@ ALTER TABLE users
 
 ALTER TABLE section
     ADD CONSTRAINT ux_section_label UNIQUE (label);
+
+CREATE INDEX idx_documents_created_at ON documents (created_at);
+
+CREATE INDEX idx_documents_status ON documents (document_status);
 
 CREATE INDEX idx_otp_expires_at ON otp_tokens (expires_at);
 
@@ -316,11 +348,15 @@ ALTER TABLE country_formality_templates
 
 CREATE INDEX idx_fpt_doc_type ON country_formality_templates (document_type_id);
 
-ALTER TABLE document
-    ADD CONSTRAINT FK_DOCUMENT_ON_DOCUMENTTYPE FOREIGN KEY (document_type_id) REFERENCES document_type (id);
+ALTER TABLE documents
+    ADD CONSTRAINT FK_DOCUMENTS_ON_DOCUMENTTYPE FOREIGN KEY (document_type_id) REFERENCES document_type (id);
 
-ALTER TABLE document
-    ADD CONSTRAINT FK_DOCUMENT_ON_TRIPUSER FOREIGN KEY (trip_user_id) REFERENCES trip_user (id);
+CREATE INDEX idx_documents_type ON documents (document_type_id);
+
+ALTER TABLE documents
+    ADD CONSTRAINT FK_DOCUMENTS_ON_USER FOREIGN KEY (user_id) REFERENCES users (id);
+
+CREATE INDEX idx_documents_user ON documents (user_id);
 
 ALTER TABLE otp_tokens
     ADD CONSTRAINT FK_OTP_TOKENS_ON_USER FOREIGN KEY (user_id) REFERENCES users (id);
@@ -378,6 +414,12 @@ ALTER TABLE users
 ALTER TABLE users
     ADD CONSTRAINT FK_USERS_ON_SECTION FOREIGN KEY (section_id) REFERENCES section (id);
 
+ALTER TABLE user_documents
+    ADD CONSTRAINT FK_USER_DOCUMENTS_ON_DOCUMENTTYPE FOREIGN KEY (document_type_id) REFERENCES document_type (id);
+
+ALTER TABLE user_documents
+    ADD CONSTRAINT FK_USER_DOCUMENTS_ON_USER FOREIGN KEY (user_id) REFERENCES users (id);
+
 ALTER TABLE web_authn_credential
     ADD CONSTRAINT FK_WEBAUTHNCREDENTIAL_ON_USER FOREIGN KEY (user_id) REFERENCES users (id);
 
@@ -406,7 +448,7 @@ ALTER TABLE trip_users
     ADD CONSTRAINT fk_triuse_on_trip_user FOREIGN KEY (users_id) REFERENCES trip_user (id);
 
 ALTER TABLE users_documents
-    ADD CONSTRAINT fk_usedoc_on_document FOREIGN KEY (documents_id) REFERENCES document (id);
+    ADD CONSTRAINT fk_usedoc_on_document FOREIGN KEY (documents_id) REFERENCES documents (id);
 
 ALTER TABLE users_documents
     ADD CONSTRAINT fk_usedoc_on_user FOREIGN KEY (user_id) REFERENCES users (id);
