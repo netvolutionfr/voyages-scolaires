@@ -27,7 +27,7 @@ public interface HealthFormAdminRepository extends JpaRepository<StudentHealthFo
      * NB: si "version" est strictement monotone, ORDER BY version DESC suffit.
      */
     @Query(value = """
-        SELECT id, student_id AS studentId, payload, 
+        SELECT id, student_id AS studentId, payload,
                signed_at AS signedAt, valid_until AS validUntil, 
                created_at AS createdAt, updated_at AS updatedAt, 
                version

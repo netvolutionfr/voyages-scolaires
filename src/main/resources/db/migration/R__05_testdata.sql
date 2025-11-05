@@ -1,0 +1,1 @@
+INSERT INTO public.users (id, public_id, email, last_name, first_name, role, created_at, updated_at) VALUES (1, gen_random_uuid(), 'stanis@netvolution.fr', 'Humez', 'Stanis', 'ADMIN', now(), now());

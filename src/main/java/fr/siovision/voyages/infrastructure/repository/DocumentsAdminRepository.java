@@ -4,7 +4,6 @@ import fr.siovision.voyages.domain.model.Document;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -30,7 +29,7 @@ public interface DocumentsAdminRepository extends JpaRepository<Document, Long> 
 
     /** Types requis par le voyage. */
     @Query(value = """
-        SELECT 
+        SELECT
             dt.id        AS documentTypeId,
             dt.abr       AS abr,
             dt.label     AS label,
@@ -58,7 +57,7 @@ public interface DocumentsAdminRepository extends JpaRepository<Document, Long> 
                ud.public_id            AS publicId,
                ud.size                 AS size,
                ud.mime                 AS mime,
-               (CASE 
+               (CASE
                    WHEN ud.mime ILIKE 'image/%' OR ud.mime = 'application/pdf' THEN TRUE 
                    ELSE FALSE 
                 END)                   AS previewable,
@@ -74,7 +73,7 @@ public interface DocumentsAdminRepository extends JpaRepository<Document, Long> 
 
     /** Vérif existence d’un doc via son public_id (UUID), et récupération de l’object_key. */
     @Query(value = """
-        SELECT ud.object_key 
+        SELECT ud.object_key
         FROM documents ud
         WHERE ud.public_id = :publicId
         LIMIT 1
