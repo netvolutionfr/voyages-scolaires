@@ -225,22 +225,6 @@ CREATE TABLE trip_users
     users_id BIGINT NOT NULL
 );
 
-CREATE TABLE user_documents
-(
-    id               BIGINT       NOT NULL,
-    public_id        UUID         NOT NULL,
-    user_id          BIGINT       NOT NULL,
-    document_type_id BIGINT       NOT NULL,
-    object_key       VARCHAR(512) NOT NULL,
-    size             BIGINT,
-    mime             VARCHAR(255),
-    sha256           VARCHAR(255),
-    status           VARCHAR(32)  NOT NULL,
-    created_at       TIMESTAMP WITHOUT TIME ZONE,
-    updated_at       TIMESTAMP WITHOUT TIME ZONE,
-    CONSTRAINT pk_user_documents PRIMARY KEY (id)
-);
-
 CREATE TABLE users
 (
     id                     BIGINT NOT NULL,
@@ -306,9 +290,6 @@ ALTER TABLE section
 
 ALTER TABLE trip
     ADD CONSTRAINT uc_trip_publicid UNIQUE (public_id);
-
-ALTER TABLE user_documents
-    ADD CONSTRAINT uc_user_documents_publicid UNIQUE (public_id);
 
 ALTER TABLE users_documents
     ADD CONSTRAINT uc_users_documents_documents UNIQUE (documents_id);
@@ -413,12 +394,6 @@ ALTER TABLE users
 
 ALTER TABLE users
     ADD CONSTRAINT FK_USERS_ON_SECTION FOREIGN KEY (section_id) REFERENCES section (id);
-
-ALTER TABLE user_documents
-    ADD CONSTRAINT FK_USER_DOCUMENTS_ON_DOCUMENTTYPE FOREIGN KEY (document_type_id) REFERENCES document_type (id);
-
-ALTER TABLE user_documents
-    ADD CONSTRAINT FK_USER_DOCUMENTS_ON_USER FOREIGN KEY (user_id) REFERENCES users (id);
 
 ALTER TABLE web_authn_credential
     ADD CONSTRAINT FK_WEBAUTHNCREDENTIAL_ON_USER FOREIGN KEY (user_id) REFERENCES users (id);

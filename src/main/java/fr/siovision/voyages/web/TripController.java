@@ -44,11 +44,17 @@ public class TripController {
         return ResponseEntity.ok(trips);
     }
 
-    @GetMapping
+    @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT', 'PARENT')")
-    @RequestMapping("/{id}")
     public ResponseEntity<TripDetailDTO> getTripById(@PathVariable Long id) {
         TripDetailDTO trip = tripService.getTripById(id);
         return ResponseEntity.ok(trip);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTrip(@PathVariable Long id) {
+        tripService.deleteTrip(id);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -156,7 +156,15 @@ public class TripService {
             return tripRepository.findBySectionsContaining(userSection, pageable)
                     .map(this::mapToTripDTO);
         }
-        return tripRepository.findAll(pageable).map(this::mapToTripDTO);
+        if (currentUser.getRole() == UserRole.TEACHER) {
+            return tripRepository.findByChaperonesContaining(currentUser, pageable)
+                    .map(this::mapToTripDTO);
+        }
+        if (currentUser.getRole() == UserRole.ADMIN) {
+            return tripRepository.findAll(pageable).map(this::mapToTripDTO);
+        }
+        // for other roles (e.g., PARENT), return no trips
+        return Page.empty(pageable);
     }
 
     @Transactional(readOnly = true)
@@ -325,5 +333,9 @@ public class TripService {
                 interested,
                 trip.getUpdatedAt().toString()
         );
+    }
+
+    public void deleteTrip(Long id) {
+        // TODO
     }
 }

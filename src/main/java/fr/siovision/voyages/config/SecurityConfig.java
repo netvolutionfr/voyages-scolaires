@@ -72,6 +72,7 @@ public class SecurityConfig {
                         // Règles métiers existantes
                         .requestMatchers("/api/participants/**").hasAnyRole("ADMIN","PARENT")
                         .requestMatchers("/api/files/**").hasAnyRole("ADMIN","TEACHER", "STUDENT", "PARENT")
+                        .requestMatchers("/api/registrations/**").hasAnyRole("ADMIN","TEACHER")
                         .requestMatchers("/api/admin/**").hasAnyRole("ADMIN")
                         .requestMatchers("/**").authenticated()
                 )

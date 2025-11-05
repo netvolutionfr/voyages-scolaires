@@ -24,7 +24,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/me/documents")
+@RequestMapping("/api/documents")
 @RequiredArgsConstructor
 public class DocumentPreviewStreamController {
     private final CurrentUserService currentUserService;
