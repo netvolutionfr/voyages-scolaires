@@ -8,6 +8,7 @@ import org.mapstruct.Mapping;
 @Mapper(componentModel = "spring")
 public interface UserMapper {
     @Mapping(source = "section.label", target = "section")
+    @Mapping(source = "section.publicId", target = "sectionPublicId")
     @Mapping(target = "fullName", expression = "java(mapFullName(user))")
     UserResponse toDTO(User user);
 

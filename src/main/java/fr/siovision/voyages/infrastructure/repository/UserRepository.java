@@ -32,4 +32,6 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Page<User> findByRoleIn(List<UserRole> roles, Pageable pageable);
 
     Optional<User> findById(Long id);
+
+    boolean existsByEmail(String email);
 }
