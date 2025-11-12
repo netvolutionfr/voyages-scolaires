@@ -4,6 +4,7 @@ import fr.siovision.voyages.domain.model.*;
 import fr.siovision.voyages.infrastructure.dto.*;
 import fr.siovision.voyages.infrastructure.repository.DocumentRepository;
 import fr.siovision.voyages.infrastructure.repository.DocumentTypeRepository;
+import fr.siovision.voyages.infrastructure.repository.StudentHealthFormRepository;
 import fr.siovision.voyages.infrastructure.repository.TripUserRepository;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -22,10 +23,15 @@ public class DocumentsService {
     private final TripUserRepository tripUserRepository;
     private final DocumentRepository documentRepository;
     private final DocumentTypeRepository documentTypeRepository;
+    private final StudentHealthFormRepository studentHealthFormRepository;
+
+    private static final String HEALTH_FORM_CODE = "health_form";
 
     public DocumentsDTO list() {
         final User user = currentUserService.getCurrentUser();
         final LocalDate today = LocalDate.now();
+        final Instant now = Instant.now();
+        final HealthFormSnapshot health = loadHealthForm(user.getId());
 
         // 1) TripUser → Voyages "actifs" (inscrit/accepté + à venir)
         final List<TripUser> links = tripUserRepository.findActiveByUser(
@@ -76,11 +82,21 @@ public class DocumentsService {
             if (!agg.containsKey(typeId)) {
                 Agg a = new Agg();
                 a.documentTypeId = typeId;
-                a.code  = dt.getAbr();
+                a.code  = dt.getAbr();     // ex: "health_form"
                 a.label = dt.getLabel();
-                a.kind  = "FILE"; // la plupart des GENERAL sont des fichiers
-                a.acceptedMime = new LinkedHashSet<>(List.of("application/pdf","image/jpeg","image/png"));
-                a.maxSizeMb = 10;
+
+                // Par défaut, beaucoup de GENERAL sont des fichiers,
+                // MAIS la fiche sanitaire est un FORM.
+                if (HEALTH_FORM_CODE.equalsIgnoreCase(a.code)) {
+                    a.kind = "FORM";
+                    a.acceptedMime = new LinkedHashSet<>(); // aucun fichier attendu
+                    a.maxSizeMb = null;
+                } else {
+                    a.kind  = "FILE";
+                    a.acceptedMime = new LinkedHashSet<>(List.of("application/pdf","image/jpeg","image/png"));
+                    a.maxSizeMb = 10;
+                }
+
                 a.required = false; // jamais requis par défaut tant qu’aucun voyage ne le demande
                 agg.put(typeId, a);
             }
@@ -93,8 +109,65 @@ public class DocumentsService {
 
         for (Agg a : agg.values()) {
             final Document doc = providedByType.get(a.documentTypeId);
-            final boolean provided = (doc != null);
 
+            final String scope = generalTypes.stream().anyMatch(gt -> gt.getId().equals(a.documentTypeId))
+                    ? "GENERAL" : "TRIP";
+
+            boolean provided = false;
+            Optional<Instant> providedAt = Optional.empty();
+            Optional<DocumentObjectDTO> lastObject = Optional.empty();
+            List<DocumentWarningDTO> warnings = new ArrayList<>();
+
+            if (HEALTH_FORM_CODE.equalsIgnoreCase(a.code)) {
+                // ===== FICHE SANITAIRE =====
+                provided = health.present();
+
+                if (health.providedAt() != null) {
+                    providedAt = Optional.of(health.providedAt());
+                }
+
+                final Expiry ex = expiryStatus(health.validUntil(), now);
+                if (a.required) {
+                    if (ex == Expiry.EXPIRED) {
+                        provided = false;
+                        warnings.add(new DocumentWarningDTO(
+                                "HEALTH_FORM_EXPIRED",
+                                "La fiche sanitaire est expirée."
+                        ));
+                    } else if (ex == Expiry.EXPIRES_SOON) {
+                        warnings.add(new DocumentWarningDTO(
+                                "HEALTH_FORM_EXPIRES_SOON",
+                                "La fiche sanitaire arrive bientôt à expiration."
+                        ));
+                    }
+                } else {
+                    if (ex == Expiry.EXPIRES_SOON) {
+                        warnings.add(new DocumentWarningDTO(
+                                "HEALTH_FORM_EXPIRES_SOON",
+                                "La fiche sanitaire arrive bientôt à expiration."
+                        ));
+                    }
+                }
+
+            } else {
+                // ===== DOCUMENT FICHIER =====
+                if (doc != null) {
+                    provided = true;
+                    providedAt = Optional.ofNullable(doc.getCreatedAt())
+                            .map(dt2 -> dt2.atZone(ZoneId.systemDefault()).toInstant());
+
+                    lastObject = Optional.of(new DocumentObjectDTO(
+                            doc.getPublicId().toString(),
+                            doc.getSize(),
+                            doc.getMime(),
+                            doc.getSha256(),
+                            doc.getDocumentStatus().name(), // ou null si pas utilisé
+                            isPreviewable(doc.getMime())
+                    ));
+                }
+            }
+
+            // Comptage “required/missing” (les GENERAL non requis ne comptent pas)
             if (a.required) {
                 totalRequired++;
                 if (!provided) {
@@ -104,9 +177,6 @@ public class DocumentsService {
                     }
                 }
             }
-
-            final String scope = generalTypes.stream().anyMatch(gt -> gt.getId().equals(a.documentTypeId))
-                    ? "GENERAL" : "TRIP";
 
             final DocumentTypeDetailDTO typeDTO = new DocumentTypeDetailDTO(
                     a.documentTypeId,
@@ -118,32 +188,14 @@ public class DocumentsService {
                     scope
             );
 
-            final Optional<Instant> providedAt = provided
-                    ? Optional.ofNullable(doc.getCreatedAt()).map(dt2 -> dt2.atZone(ZoneId.systemDefault()).toInstant())
-                    : Optional.empty();
-
-            final Optional<DocumentObjectDTO> lastObject = provided
-                    ? Optional.of(new DocumentObjectDTO(
-                    doc.getPublicId().toString(),
-                    doc.getSize(),
-                    doc.getMime(),
-                    doc.getSha256(),
-                    doc.getDocumentStatus().name(), // "READY"
-                    isPreviewable(doc.getMime())
-            ))
-                    : Optional.empty();
-
-
-            final List<DocumentWarningDTO> warnings = List.of(); // V1
-
             items.add(new DocumentItemDTO(
                     typeDTO,
-                    a.required,                       // GENERAL => false ici
-                    List.copyOf(a.requiredByTrips),   // GENERAL => []
+                    a.required,
+                    List.copyOf(a.requiredByTrips),
                     provided,
                     providedAt,
                     lastObject,
-                    warnings
+                    List.copyOf(warnings)
             ));
         }
 
@@ -238,5 +290,31 @@ public class DocumentsService {
                 else this.maxSizeMb = Math.min(this.maxSizeMb, f.getMaxSizeMb());
             }
         }
+    }
+
+    private record HealthFormSnapshot(
+            boolean present,
+            Instant providedAt,   // signé ou, à défaut, mis à jour
+            Instant validUntil    // peut être null
+    ) {}
+
+    private HealthFormSnapshot loadHealthForm(Long userId) {
+        return studentHealthFormRepository.findLatestByUserId(userId)
+                .map(f -> new HealthFormSnapshot(
+                        true,
+                        f.getSignedAt() != null ? f.getSignedAt() : f.getUpdatedAt(),
+                        f.getValidUntil()
+                ))
+                .orElseGet(() -> new HealthFormSnapshot(false, null, null));
+    }
+
+    private enum Expiry { VALID, EXPIRES_SOON, EXPIRED }
+
+    private Expiry expiryStatus(Instant validUntil, Instant now) {
+        if (validUntil == null) return Expiry.VALID;
+        if (validUntil.isBefore(now)) return Expiry.EXPIRED;
+        // “bientôt” = moins de 30 jours
+        if (validUntil.isBefore(now.plusSeconds(30L * 24 * 3600))) return Expiry.EXPIRES_SOON;
+        return Expiry.VALID;
     }
 }
