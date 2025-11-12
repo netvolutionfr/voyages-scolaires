@@ -27,6 +27,7 @@ public class TripService {
     private final CurrentUserService currentUserService;
     private final TripPreferenceService tripPreferenceService;
     private final SectionMapper sectionMapper;
+    private final TripUserRepository tripUserRepository;
 
     // Méthode pour créer un nouveau voyage
     @Transactional
@@ -204,6 +205,11 @@ public class TripService {
         User currentUser = currentUserService.getCurrentUser();
         boolean interested = tripPreferenceService.isInterested(currentUser, trip.getId());
 
+        // Vérifier que l'utilisateur est inscrit à ce voyage
+        // Dans TripUsers, il y a une entrée si l'utilisateur est inscrit mais ce n'est pas dans tripPreference
+        // Utiliser le TripUserRepository pour vérifier l'inscription
+        boolean registered = tripUserRepository.existsByTrip_IdAndUser_Id(trip.getId(), currentUser.getId());
+
         return new TripDetailDTO(
                 trip.getId(),
                 trip.getTitle(),
@@ -222,6 +228,7 @@ public class TripService {
                 interestedCount,
                 sections,
                 interested,
+                registered,
                 trip.getUpdatedAt().toString()
         );
     }
@@ -312,6 +319,8 @@ public class TripService {
         User currentUser = currentUserService.getCurrentUser();
         boolean interested = tripPreferenceService.isInterested(currentUser, trip.getId());
 
+        boolean registered = tripUserRepository.existsByTrip_IdAndUser_Id(trip.getId(), currentUser.getId());
+
         CountryDTO paysDTO = new CountryDTO(trip.getCountry().getId(), trip.getCountry().getName());
         return new TripDetailDTO(
                 trip.getId(),
@@ -331,6 +340,7 @@ public class TripService {
                 interestedCount,
                 sections,
                 interested,
+                registered,
                 trip.getUpdatedAt().toString()
         );
     }

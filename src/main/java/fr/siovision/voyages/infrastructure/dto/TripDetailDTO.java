@@ -27,5 +27,6 @@ public class TripDetailDTO {
     private Long interestedCount; // Nombre de personnes intéressées
     private List<SectionDTO> sections;
     private Boolean interestedByCurrentUser; // Si l'utilisateur courant est intéressé
+    private Boolean registeredByCurrentUser; // Si l'utilisateur courant est inscrit
     private String updatedAt; // Date de la dernière mise à jour
 }
