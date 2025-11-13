@@ -1,11 +1,9 @@
 package fr.siovision.voyages.infrastructure.dto;
 
-import java.time.LocalDateTime;
-
 public record DocumentItemAdminDTO(
         DocumentTypeAdminDTO documentType,
         boolean required,
         boolean provided,
-        LocalDateTime providedAt,
+        java.util.Date providedAt,
         DocumentObjectMiniDTO lastObject
 ) {}

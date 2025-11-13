@@ -15,6 +15,7 @@ public interface DocumentsAdminRepository extends JpaRepository<Document, Long> 
         String getAbr();
         String getLabel();
         Boolean getRequired();
+        String getTripCondition();
     }
 
     /** Dernier dépôt de l'utilisateur pour un type donné (peut être null si rien déposé). */
@@ -33,7 +34,8 @@ public interface DocumentsAdminRepository extends JpaRepository<Document, Long> 
             dt.id        AS documentTypeId,
             dt.abr       AS abr,
             dt.label     AS label,
-            tf.required  AS required
+            tf.required  AS required,
+            tf.trip_condition AS tripCondition
         FROM trip_formality tf
         JOIN document_type dt ON dt.id = tf.document_type_id
         WHERE tf.trip_id = :tripId
@@ -58,8 +60,8 @@ public interface DocumentsAdminRepository extends JpaRepository<Document, Long> 
                ud.size                 AS size,
                ud.mime                 AS mime,
                (CASE
-                   WHEN ud.mime ILIKE 'image/%' OR ud.mime = 'application/pdf' THEN TRUE 
-                   ELSE FALSE 
+                   WHEN ud.mime ILIKE 'image/%' OR ud.mime = 'application/pdf' THEN TRUE
+                   ELSE FALSE
                 END)                   AS previewable,
                COALESCE(ud.updated_at, ud.created_at) AS providedAt,
                ud.object_key           AS objectKey
