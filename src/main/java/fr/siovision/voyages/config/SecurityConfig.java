@@ -85,7 +85,7 @@ public class SecurityConfig {
     @Order(1)
     @Bean
     @Profile("!dev")
-    public SecurityFilterChain prodSecurityChain(HttpSecurity http, RequestAuditFilter audit) throws Exception {
+    public SecurityFilterChain prodSecurityChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(AbstractHttpConfigurer::disable) // CORS géré par le proxy frontal (Nginx, Apache, autre) ou api dans le même domaine
@@ -101,8 +101,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasAnyRole("ADMIN")
                         .requestMatchers("/**").authenticated()
                 )
-                .oauth2ResourceServer(o -> o.jwt(j -> j.jwtAuthenticationConverter(jwtAuthenticationConverter())))
-                .addFilterAfter(audit, org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.class);
+                .oauth2ResourceServer(o -> o.jwt(j -> j.jwtAuthenticationConverter(jwtAuthenticationConverter())));
 
         return http.build();
     }
