@@ -1,38 +1,41 @@
 # API REST pour application Voyages
 
 API écrite avec le framework Spring Boot.
-Authentification par JWT, fourni par Keycloak.
+Authentification basée sur WebAuthn/Passkeys, OTP et des JWT signés côté applicatif.
 
 ## Présentation
 
 Service REST gérant les participants, sections et entités liées à l'application "Voyages".
-Cette API utilise PostgreSQL comme base de données et Keycloak pour l'authentification/autorisation.
+Cette API utilise PostgreSQL comme base de données, S3/MinIO pour les fichiers et un serveur WebAuthn embarqué pour l'authentification.
 
 ## Prérequis
 
 - JDK 17 (ou version configurée dans le projet)
 - Gradle wrapper (fourni) ou Gradle installé
-- Docker & docker-compose (optionnel pour exécuter Keycloak/Postgres localement)
+- Docker & docker-compose (optionnel pour exécuter Postgres/MinIO localement)
 - Node/npm (si vous utilisez des outils front ou scripts complémentaires)
 
 ## Variables d'environnement
 
-L'application lit des variables d'environnement (fichier `.env` recommandé) utilisées pour se connecter à la base de données et Keycloak.
+L'application lit des variables d'environnement (fichier `.env` recommandé) utilisées pour se connecter à la base de données, signer les JWT et exposer WebAuthn.
 Voici un exemple minimal (.env) :
 
 ```
+SPRING_APPLICATION_NAME=voyages
 SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/voyages
 SPRING_DATASOURCE_USERNAME=voyages
 SPRING_DATASOURCE_PASSWORD=changeit
 SPRING_JPA_HIBERNATE_DDL_AUTO=update
-
-KEYCLOAK_SERVER_URL=http://localhost:8080/auth
-KEYCLOAK_REALM=voyages-realm
-KEYCLOAK_RESOURCE=voyages-client
-KEYCLOAK_CREDENTIALS_SECRET=your-client-secret
-
-# Optionnel pour le profile dev
 SPRING_PROFILES_ACTIVE=dev
+
+APP_FRONT_URL=http://localhost:5173
+
+WEBAUTHN_ALLOWED_ORIGINS=http://localhost:5173
+WEBAUTHN_RP_ID=localhost
+WEBAUTHN_DEFAULT_ORIGIN=http://localhost:5173
+
+JWT_SECRET_KEY=base64url-encoded-secret
+JWT_ISSUER=https://voyages.local
 ```
 
 Ne placez pas de secrets en clair dans le dépôt. Utilisez un mécanisme sécurisé pour CI/CD.
@@ -50,15 +53,15 @@ Ne placez pas de secrets en clair dans le dépôt. Utilisez un mécanisme sécur
 
    ou définir `SPRING_PROFILES_ACTIVE=dev` et exécuter `./gradlew bootRun`.
 
-### Avec Docker Compose (Keycloak + Postgres)
+### Avec Docker Compose (Postgres + MinIO)
 
-Le projet contient un `docker-compose.yml` pour démarrer Postgres et Keycloak en local. Exemple :
+Le projet contient un `docker-compose.yml` pour démarrer Postgres, MinIO (S3) et l'image de référence de l'API. Exemple :
 
 ```bash
 docker-compose up -d
 ```
 
-Ensuite lancer l'application (gradle ou depuis l'IDE).
+Ensuite, soit consommer l'image packagée, soit lancer l'application avec Gradle/IDE en pointant vers les mêmes services (`SPRING_DATASOURCE_URL`, `S3_*`, etc.).
 
 ### Lancer dans IntelliJ
 
@@ -98,9 +101,9 @@ Le jar sera dans `build/libs/`.
 
 ## Points d'attention / Débogage
 
-- Vérifier les variables d'environnement (connexion DB, Keycloak).
+- Vérifier les variables d'environnement (connexion DB, S3, JWT, WebAuthn).
 - Activer les logs `DEBUG` dans `application.properties` si besoin.
-- En cas d'erreur d'authentification, vérifier les réglages du client Keycloak (redirects, secret, realm).
+- En cas d'erreur d'authentification, contrôler les origins déclarés (`WEBAUTHN_ALLOWED_ORIGINS`) et la clé `JWT_SECRET_KEY`.
 
 ## Contribuer
 
@@ -110,8 +113,9 @@ Le jar sera dans `build/libs/`.
 
 ## Ressources utiles
 
-- Keycloak: https://www.keycloak.org/
 - Spring Boot: https://spring.io/projects/spring-boot
+- WebAuthn (spec + guides): https://webauthn.guide/
+- MinIO / S3 API: https://min.io/docs/
 - Swagger / OpenAPI: https://swagger.io/
 
 ## Endpoints principaux
@@ -119,7 +123,7 @@ Le jar sera dans `build/libs/`.
 Ci‑dessous une documentation concise des endpoints principaux exposés par l'API.
 
 Authentification
-- Toutes les requêtes protégées nécessitent un header `Authorization: Bearer <access_token>` fourni par Keycloak.
+- Toutes les requêtes protégées nécessitent un header `Authorization: Bearer <access_token>` émis par le service JWT interne (obtenu après WebAuthn/OTP).
 
 Participants
 
