@@ -1,15 +1,15 @@
 package fr.siovision.voyages.application.service;
 
 import com.nimbusds.jose.*;
-import com.nimbusds.jose.crypto.MACSigner;
-import com.nimbusds.jose.crypto.MACVerifier;
+import com.nimbusds.jose.crypto.ECDSASigner;
+import com.nimbusds.jose.crypto.ECDSAVerifier;
+import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 import java.util.UUID;
@@ -18,8 +18,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ActivationTokenService {
 
-    @Value("${app.activation.jwt-secret}")
-    private String secret;
+    private final ECKey ecKey;
 
     @Value("${app.activation.issuer}")
     private String issuer;
@@ -41,10 +40,12 @@ public class ActivationTokenService {
                     .subject(email)
                     .build();
 
-            var header = new JWSHeader.Builder(JWSAlgorithm.HS256).type(JOSEObjectType.JWT).build();
+            var header = new JWSHeader.Builder(JWSAlgorithm.ES256)
+                    .keyID(ecKey.getKeyID())
+                    .type(JOSEObjectType.JWT)
+                    .build();
             var jwt = new SignedJWT(header, claims);
-            var signer = new MACSigner(secret.getBytes(StandardCharsets.UTF_8));
-            jwt.sign(signer);
+            jwt.sign(new ECDSASigner(ecKey));
             return jwt.serialize();
         } catch (Exception e) {
             throw new IllegalStateException("Cannot create activation token", e);
@@ -54,8 +55,9 @@ public class ActivationTokenService {
     public ActivationToken verify(String token) {
         try {
             var jwt = SignedJWT.parse(token);
-            var verifier = new MACVerifier(secret.getBytes(StandardCharsets.UTF_8));
-            if (!jwt.verify(verifier)) throw new JOSEException("Invalid signature");
+            if (!jwt.verify(new ECDSAVerifier(ecKey.toPublicJWK()))) {
+                throw new JOSEException("Invalid signature");
+            }
 
             var claims = jwt.getJWTClaimsSet();
             if (!"activation".equals(claims.getStringClaim("purpose"))) {

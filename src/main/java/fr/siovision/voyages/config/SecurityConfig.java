@@ -82,7 +82,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/files/**").hasAnyRole("ADMIN","TEACHER", "STUDENT", "PARENT")
                         .requestMatchers("/api/registrations/**").hasAnyRole("ADMIN","TEACHER")
                         .requestMatchers("/api/admin/**").hasAnyRole("ADMIN")
-                        .requestMatchers("/**").authenticated()
+                        // PENDING exclus : ils ne peuvent accéder qu'aux endpoints permitAll() ci-dessus
+                        .requestMatchers("/**").hasAnyRole("ADMIN","PARENT","STUDENT","TEACHER")
                 )
                 .oauth2ResourceServer(o -> o.jwt(j -> j.jwtAuthenticationConverter(jwtAuthenticationConverter())))
                 .addFilterAfter(audit, org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter.class);
@@ -107,7 +108,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/participants/**").hasAnyRole("ADMIN","PARENT")
                         .requestMatchers("/api/files/**").hasAnyRole("ADMIN","TEACHER", "STUDENT", "PARENT")
                         .requestMatchers("/api/admin/**").hasAnyRole("ADMIN")
-                        .requestMatchers("/**").authenticated()
+                        // PENDING exclus : ils ne peuvent accéder qu'aux endpoints permitAll() ci-dessus
+                        .requestMatchers("/**").hasAnyRole("ADMIN","PARENT","STUDENT","TEACHER")
                 )
                 .oauth2ResourceServer(o -> o.jwt(j -> j.jwtAuthenticationConverter(jwtAuthenticationConverter())));
 
