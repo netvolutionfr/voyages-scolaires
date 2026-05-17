@@ -22,7 +22,7 @@ public class OtpController {
     private final OtpService otpService;
 
     @PostMapping("/resend")
-    public ResponseEntity<ApiMessage> resend(@RequestBody OtpIssueRequest req) {
+    public ResponseEntity<ApiMessage> resend(@Valid @RequestBody OtpIssueRequest req) {
         // Réponse neutre, même si l'e-mail n'existe pas (optionnel)
         try {
             otpService.resend(req.email());

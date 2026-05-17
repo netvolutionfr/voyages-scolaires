@@ -16,8 +16,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Enumeration;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -59,18 +57,6 @@ public class RequestAuditFilter extends OncePerRequestFilter {
                         authzHeader, user, authorities);
             }
 
-            // DEBUG: log des headers HTTP
-            // TODO : à enlever en production
-            log.warn("⚠️ DEBUG: Logging headers for request to {}", req.getRequestURI());
-
-            Enumeration<String> headerNames = req.getHeaderNames();
-            while (headerNames.hasMoreElements()) {
-                String headerName = headerNames.nextElement();
-                String headerValue = String.join(", ", Collections.list(req.getHeaders(headerName)));
-
-                // ATTENTION : on loggue même Authorization ici
-                log.warn("🟡 Header: {} = {}", headerName, headerValue);
-            }
         }
     }
 }

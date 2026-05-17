@@ -1,5 +1,6 @@
 package fr.siovision.voyages.web;
 
+import jakarta.validation.Valid;
 import fr.siovision.voyages.application.service.UserService;
 import fr.siovision.voyages.domain.model.User;
 import fr.siovision.voyages.domain.model.UserRole;
@@ -84,7 +85,7 @@ public class UserController {
     @PostMapping("/users")
     public ResponseEntity<String> createUser(
             @AuthenticationPrincipal Jwt jwt,
-            @RequestBody UserCreateRequest request
+            @Valid @RequestBody UserCreateRequest request
     ) {
         User createdUser = userService.createUser(jwt, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser.getPublicId().toString());

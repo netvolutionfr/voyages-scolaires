@@ -3,6 +3,7 @@ package fr.siovision.voyages.web;
 import fr.siovision.voyages.application.service.TripService;
 import fr.siovision.voyages.domain.model.Trip;
 import fr.siovision.voyages.infrastructure.dto.*;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,7 +22,7 @@ public class TripController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
-    public ResponseEntity<String> createTrip(@RequestBody TripUpsertRequest tripRequest) {
+    public ResponseEntity<String> createTrip(@Valid @RequestBody TripUpsertRequest tripRequest) {
         // Appeler le service pour créer un nouveau voyage
         Trip saved = tripService.createTrip(tripRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(saved.getId().toString());
@@ -29,7 +30,7 @@ public class TripController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
-    public ResponseEntity<String> updateTrip(@PathVariable Long id, @RequestBody TripUpsertRequest tripRequest) {
+    public ResponseEntity<String> updateTrip(@PathVariable Long id, @Valid @RequestBody TripUpsertRequest tripRequest) {
         // Mettre à jour une section existante
         Trip updatedVoyage = tripService.updateTrip(id, tripRequest);
         return ResponseEntity.status(HttpStatus.OK).body(updatedVoyage.getId().toString());
