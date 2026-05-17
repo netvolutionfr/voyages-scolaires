@@ -1,11 +1,12 @@
 package fr.siovision.voyages.application.service.impl;
 
+import com.nimbusds.jose.jwk.ECKey;
 import fr.siovision.voyages.application.service.JwtService;
 import fr.siovision.voyages.domain.model.User;
 import fr.siovision.voyages.domain.model.UserStatus;
 import fr.siovision.voyages.infrastructure.repository.RefreshTokenRepository;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -21,6 +22,7 @@ import java.util.UUID;
 @Service
 public class JwtServiceImpl implements JwtService {
     private final JwtEncoder encoder;
+    private final ECKey ecKey;
 
     @Value("${app.jwt.pending-ttl-seconds}")
     long pendingExpiry;
@@ -42,9 +44,11 @@ public class JwtServiceImpl implements JwtService {
 
     public JwtServiceImpl(
             JwtEncoder encoder,
+            ECKey ecKey,
             RefreshTokenRepository refreshTokenRepository
     ) {
         this.encoder = encoder;
+        this.ecKey = ecKey;
     }
 
     @Override
@@ -75,7 +79,8 @@ public class JwtServiceImpl implements JwtService {
                 .claim("lastName", user.getLastName())
                 .build();
 
-        JwsHeader jws = JwsHeader.with(MacAlgorithm.HS256)
+        JwsHeader jws = JwsHeader.with(SignatureAlgorithm.ES256)
+                .keyId(ecKey.getKeyID())
                 .type("JWT")
                 .build();
 
@@ -113,7 +118,8 @@ public class JwtServiceImpl implements JwtService {
                 .claim("lastName", user.getLastName())
                 .build();
 
-        JwsHeader jws = JwsHeader.with(MacAlgorithm.HS256)
+        JwsHeader jws = JwsHeader.with(SignatureAlgorithm.ES256)
+                .keyId(ecKey.getKeyID())
                 .type("JWT")
                 .build();
 

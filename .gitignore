@@ -37,3 +37,7 @@ out/
 .vscode/
 
 .env
+secrets/
+com/
+
+.codegraph

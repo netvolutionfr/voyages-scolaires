@@ -1,7 +1,8 @@
 # API REST pour application Voyages
 
 API écrite avec le framework Spring Boot.
-Authentification basée sur WebAuthn/Passkeys, OTP et des JWT signés côté applicatif.
+Authentification basée sur WebAuthn/Passkeys, OTP et des JWT signés en ES256 (ECDSA P-256) côté applicatif.
+La clé publique de vérification est exposée sur `GET /.well-known/jwks.json`.
 
 ## Présentation
 
@@ -10,7 +11,7 @@ Cette API utilise PostgreSQL comme base de données, S3/MinIO pour les fichiers 
 
 ## Prérequis
 
-- JDK 17 (ou version configurée dans le projet)
+- JDK 21 (ou version configurée dans le projet)
 - Gradle wrapper (fourni) ou Gradle installé
 - Docker & docker-compose (optionnel pour exécuter Postgres/MinIO localement)
 - Node/npm (si vous utilisez des outils front ou scripts complémentaires)
@@ -34,7 +35,8 @@ WEBAUTHN_ALLOWED_ORIGINS=http://localhost:5173
 WEBAUTHN_RP_ID=localhost
 WEBAUTHN_DEFAULT_ORIGIN=http://localhost:5173
 
-JWT_SECRET_KEY=base64url-encoded-secret
+JWT_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\n<clé PKCS8 EC P-256, \n-escapés>\n-----END PRIVATE KEY-----
+JWT_PUBLIC_KEY=-----BEGIN PUBLIC KEY-----\n<clé SPKI, \n-escapés>\n-----END PUBLIC KEY-----
 JWT_ISSUER=https://voyages.local
 ```
 
@@ -103,7 +105,8 @@ Le jar sera dans `build/libs/`.
 
 - Vérifier les variables d'environnement (connexion DB, S3, JWT, WebAuthn).
 - Activer les logs `DEBUG` dans `application.properties` si besoin.
-- En cas d'erreur d'authentification, contrôler les origins déclarés (`WEBAUTHN_ALLOWED_ORIGINS`) et la clé `JWT_SECRET_KEY`.
+- En cas d'erreur d'authentification, contrôler les origins déclarés (`WEBAUTHN_ALLOWED_ORIGINS`) et les clés `JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY`.
+- La clé publique active est consultable sans authentification sur `GET /actuator/health` et `GET /.well-known/jwks.json`.
 
 ## Contribuer
 

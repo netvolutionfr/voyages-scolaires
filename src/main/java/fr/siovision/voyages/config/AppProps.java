@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record AppProps(
         Jwt jwt, Challenge challenge, Otp otp
 ){
-    public record Jwt(String issuer, long accessTtlSeconds, long pendingTtlSeconds, String hmacSecret){ }
+    public record Jwt(String issuer, long accessTtlSeconds, long pendingTtlSeconds){ }
     public record Challenge(long ttlSeconds, long timeoutMs){}
     public record Otp(int length, long ttlSeconds){}
 }

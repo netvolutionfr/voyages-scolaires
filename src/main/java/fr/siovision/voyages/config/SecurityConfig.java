@@ -17,15 +17,20 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.jwk.ECKey;
+import com.nimbusds.jose.jwk.JWKSet;
+import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
+import com.nimbusds.jose.proc.JWSVerificationKeySelector;
+import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import javax.crypto.spec.SecretKeySpec;
 import java.util.*;
 
 @Configuration
@@ -69,6 +74,9 @@ public class SecurityConfig {
                         // Public
                         .requestMatchers("/api/public/**").permitAll()
 
+                        // JWKS
+                        .requestMatchers("/.well-known/jwks.json").permitAll()
+
                         // Règles métiers existantes
                         .requestMatchers("/api/participants/**").hasAnyRole("ADMIN","PARENT")
                         .requestMatchers("/api/files/**").hasAnyRole("ADMIN","TEACHER", "STUDENT", "PARENT")
@@ -95,6 +103,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/otp/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers("/.well-known/jwks.json").permitAll()
                         .requestMatchers("/api/participants/**").hasAnyRole("ADMIN","PARENT")
                         .requestMatchers("/api/files/**").hasAnyRole("ADMIN","TEACHER", "STUDENT", "PARENT")
                         .requestMatchers("/api/admin/**").hasAnyRole("ADMIN")
@@ -137,15 +146,25 @@ public class SecurityConfig {
 
     @Bean
     public JwtDecoder jwtDecoder(
-        @Value("${app.jwt.secret-key}") String secret
+            ECKey ecKey,
+            @Value("${app.jwt.issuer}") String issuer
     ) {
-        byte[] keyBytes = Base64.getDecoder().decode(secret);
+        try {
+            var jwkSource = new ImmutableJWKSet<com.nimbusds.jose.proc.SecurityContext>(
+                    new JWKSet(ecKey.toPublicJWK()));
 
-        var key = new SecretKeySpec(keyBytes, "HmacSHA256");
+            var keySelector = new JWSVerificationKeySelector<>(JWSAlgorithm.ES256, jwkSource);
 
-        return NimbusJwtDecoder.withSecretKey(key)
-                .macAlgorithm(MacAlgorithm.HS256)  // ton header alg = HS256
-                .build();
+            var jwtProcessor = new DefaultJWTProcessor<com.nimbusds.jose.proc.SecurityContext>();
+            jwtProcessor.setJWSKeySelector(keySelector);
+
+            var decoder = new NimbusJwtDecoder(jwtProcessor);
+            decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(issuer));
+            return decoder;
+
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to configure JWT decoder", e);
+        }
     }
 
     @Bean
