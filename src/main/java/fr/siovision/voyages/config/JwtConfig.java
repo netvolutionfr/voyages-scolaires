@@ -65,6 +65,12 @@ public class JwtConfig {
         return new NimbusJwtEncoder(jwkSource);
     }
 
+    /** Expose uniquement la clé publique — injecté dans JwksController à la place de l'ECKey complet. */
+    @Bean
+    public JWKSet publicJwkSet(ECKey ecKey) {
+        return new JWKSet(ecKey.toPublicJWK());
+    }
+
     private static ECPrivateKey loadPrivateKey(String pem) throws Exception {
         byte[] der = decodePem(pem);
         return (ECPrivateKey) KeyFactory.getInstance("EC")

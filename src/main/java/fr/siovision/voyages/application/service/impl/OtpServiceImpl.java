@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -60,7 +61,7 @@ public class OtpServiceImpl implements OtpService {
     public void issueAndSend(User user) {
         if (user == null) throw new IllegalArgumentException("user cannot be null");
         // Anti-spam: respect du cooldown si un OTP PENDING existe déjà
-        var existing = otpRepo.findOtpTokenByUserAndPurposeAndStatusOrderByCreatedAtDesc(
+        var existing = otpRepo.findLatestPendingForUpdate(
                 user, OtpToken.Purpose.ACCOUNT_VERIFICATION, OtpToken.Status.PENDING
         );
 
@@ -100,7 +101,7 @@ public class OtpServiceImpl implements OtpService {
         User user = userRepo.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        OtpToken token = otpRepo.findOtpTokenByUserAndPurposeAndStatusOrderByCreatedAtDesc(
+        OtpToken token = otpRepo.findLatestPendingForUpdate(
                         user, OtpToken.Purpose.ACCOUNT_VERIFICATION, OtpToken.Status.PENDING)
                 .orElseThrow(() -> new InvalidOtpException("No validation code found. Please request a new code."));
 
@@ -130,8 +131,8 @@ public class OtpServiceImpl implements OtpService {
         user.markAsVerified();
         userRepo.save(user);
 
-        String newAccessToken = jwtService.generateAccessToken(user);
-        String refreshToken = refreshTokenService.generateOpaqueToken();
+        String newAccessToken = jwtService.generateAccessToken(user, List.of("otp"));
+        String refreshToken = refreshTokenService.issue(user);
 
         return new RefreshResponse(
                 "Bearer",
@@ -157,7 +158,7 @@ public class OtpServiceImpl implements OtpService {
         }
 
         // 2) Cooldown + invalidation de l'ancien PENDING si on régénère
-        var existing = otpRepo.findOtpTokenByUserAndPurposeAndStatusOrderByCreatedAtDesc(
+        var existing = otpRepo.findLatestPendingForUpdate(
                 user, OtpToken.Purpose.ACCOUNT_VERIFICATION, OtpToken.Status.PENDING);
 
         if (existing.isPresent()) {

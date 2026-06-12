@@ -19,6 +19,7 @@ public class TripRegistrationController {
     private final TripRegistrationService registrationService;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('STUDENT', 'PARENT')")
     public ResponseEntity<TripRegistrationResponse> create(@RequestBody TripRegistrationRequest body) {
         TripRegistrationResponse res = registrationService.registerCurrentUserForTrip(body);
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
@@ -27,9 +28,8 @@ public class TripRegistrationController {
     private final TripRegistrationAdminService service;
 
     @PatchMapping("/{tripUserId}")
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER') and @tripSecurity.canViewTrip(#tripId)")
+    @PreAuthorize("hasAnyRole('ADMIN','TEACHER') and @tripSecurity.canViewRegistration(#tripUserId)")
     public RegistrationAdminUpdateResponse update(
-            @RequestParam Long tripId,
             @PathVariable Long tripUserId,
             @RequestBody RegistrationAdminUpdateRequest body
     ) {

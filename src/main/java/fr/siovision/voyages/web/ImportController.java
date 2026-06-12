@@ -20,7 +20,7 @@ public class ImportController {
     @PreAuthorize("hasAnyRole('ADMIN')")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ImportResult importCsv(@RequestParam("file") MultipartFile file) throws Exception {
-        log.info("Received file for import: {}", file.getOriginalFilename());
+        log.info("Received file for import, size={} bytes", file.getSize());
         try (var is = file.getInputStream()) {
             return importService.importCsv(is);
         } catch (Exception e) {

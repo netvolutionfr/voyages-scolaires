@@ -20,6 +20,7 @@ public class CryptoConverter implements AttributeConverter<String, String> {
     private static final String ALGORITHM = "AES/GCM/NoPadding";
     private static final int GCM_TAG_LENGTH = 128;
     private static final int GCM_IV_LENGTH = 12;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     @Value("${app.data-encryption.key}")
     private String base64Key; // Clé en Base64 (256 bits recommandé)
@@ -45,8 +46,7 @@ public class CryptoConverter implements AttributeConverter<String, String> {
 
         try {
             byte[] iv = new byte[GCM_IV_LENGTH];
-            SecureRandom random = new SecureRandom();
-            random.nextBytes(iv);
+            SECURE_RANDOM.nextBytes(iv);
 
             Cipher cipher = Cipher.getInstance(ALGORITHM);
             GCMParameterSpec spec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);

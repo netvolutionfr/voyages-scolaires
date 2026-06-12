@@ -20,6 +20,7 @@ public class SectionController {
     private SectionService sectionService;
 
     @GetMapping()
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Page<SectionDTO>> list(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) Cycle cycle,
@@ -34,6 +35,7 @@ public class SectionController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<SectionDTO> getSectionById(@PathVariable Long id) {
         SectionDTO section = sectionService.getSectionById(id);
         return section != null ? ResponseEntity.ok(section) : ResponseEntity.notFound().build();

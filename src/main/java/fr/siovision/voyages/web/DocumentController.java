@@ -4,6 +4,7 @@ import fr.siovision.voyages.application.service.DocumentsService;
 import fr.siovision.voyages.infrastructure.dto.DocumentsDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,6 +17,7 @@ public class DocumentController {
     private DocumentsService documentsService;
 
     @GetMapping()
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<DocumentsDTO> getDocuments() {
         DocumentsDTO documents = documentsService.list();
         return ResponseEntity.ok(documents);

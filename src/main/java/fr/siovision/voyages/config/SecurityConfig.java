@@ -108,6 +108,13 @@ public class SecurityConfig {
                 .oauth2ResourceServer(o -> o
                         .bearerTokenResolver(new CookieBearerTokenResolver())
                         .jwt(j -> j.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                )
+                // HSTS: set by the app when TLS is terminated here; if a reverse proxy
+                // terminates TLS, configure HSTS on the proxy and remove this block.
+                .headers(h -> h
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .includeSubDomains(true)
+                                .maxAgeInSeconds(31536000))
                 );
 
         return http.build();
@@ -134,26 +141,11 @@ public class SecurityConfig {
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtAuthenticationConverter conv = new JwtAuthenticationConverter();
         conv.setJwtGrantedAuthoritiesConverter(jwt -> {
-            java.util.Set<org.springframework.security.core.GrantedAuthority> out = new java.util.HashSet<>();
-
-            Object rolesClaim = jwt.getClaim("roles");
-            if (rolesClaim instanceof java.util.Collection<?> coll) {
-                for (Object r : coll) {
-                    String role = String.valueOf(r);
-                    out.add(new org.springframework.security.core.authority.SimpleGrantedAuthority(
-                            role.startsWith("ROLE_") ? role : "ROLE_" + role
-                    ));
-                }
-            }
-
             String role = jwt.getClaimAsString("role");
-            if (role != null && !role.isBlank()) {
-                out.add(new org.springframework.security.core.authority.SimpleGrantedAuthority(
-                        role.startsWith("ROLE_") ? role : "ROLE_" + role
-                ));
-            }
-
-            return out;
+            if (role == null || role.isBlank()) return java.util.Set.of();
+            return java.util.Set.of(new org.springframework.security.core.authority.SimpleGrantedAuthority(
+                    role.startsWith("ROLE_") ? role : "ROLE_" + role
+            ));
         });
         return conv;
     }

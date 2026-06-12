@@ -29,7 +29,7 @@ public class TripController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
+    @PreAuthorize("hasRole('ADMIN') or (hasRole('TEACHER') and @tripSecurity.canViewTrip(#id))")
     public ResponseEntity<String> updateTrip(@PathVariable Long id, @Valid @RequestBody TripUpsertRequest tripRequest) {
         // Mettre à jour une section existante
         Trip updatedVoyage = tripService.updateTrip(id, tripRequest);

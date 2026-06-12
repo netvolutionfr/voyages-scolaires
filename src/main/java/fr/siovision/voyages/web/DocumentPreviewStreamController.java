@@ -7,6 +7,7 @@ import fr.siovision.voyages.domain.model.UserRole;
 import fr.siovision.voyages.infrastructure.repository.DocumentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,6 +21,8 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 import javax.crypto.*;
 import javax.crypto.spec.GCMParameterSpec;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -33,6 +36,7 @@ public class DocumentPreviewStreamController {
     private final DocumentRepository documentRepository;
 
     @GetMapping(value = "/{docId}/preview")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<StreamingResponseBody> preview(@PathVariable UUID docId) {
         // 1) Charge & contrôle d’accès
         var user = currentUserService.getCurrentUser();
@@ -97,9 +101,16 @@ public class DocumentPreviewStreamController {
         String mime = Optional.ofNullable(doc.getMime()).orElse(MediaType.APPLICATION_OCTET_STREAM_VALUE);
         String filename = Optional.ofNullable(doc.getOriginalFilename()).orElse("document");
 
+        // RFC 6266 / RFC 5987: ASCII fallback (strip control chars, quotes, semicolons)
+        // + UTF-8 percent-encoded param for browsers that support it.
+        String asciiName = filename.replaceAll("[\\x00-\\x1F\\x7F\"\\\\;]", "_")
+                                   .replaceAll("[^\\x20-\\x7E]", "_");
+        String encodedName = URLEncoder.encode(filename, StandardCharsets.UTF_8).replace("+", "%20");
+
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(mime))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename.replace("\"","") + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "inline; filename=\"" + asciiName + "\"; filename*=UTF-8''" + encodedName)
                 .cacheControl(CacheControl.noStore())
                 .header("Pragma", "no-cache")
                 .body(body);

@@ -87,7 +87,8 @@ public class JwtServiceImpl implements JwtService {
         return this.encoder.encode(JwtEncoderParameters.from(jws, claims)).getTokenValue();
     }
 
-    public String generateAccessToken(User user) {
+    @Override
+    public String generateAccessToken(User user, List<String> amr) {
         Instant now = Instant.now();
 
         long ttl = (user.getStatus() == UserStatus.PENDING)
@@ -98,9 +99,6 @@ public class JwtServiceImpl implements JwtService {
         String role = (user.getStatus() == UserStatus.PENDING)
                 ? "PENDING"
                 : user.getRole().toString();
-
-        // amr (Authentication Methods Reference) : on précise webauthn
-        List<String> amr = List.of("webauthn");
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(issuer)

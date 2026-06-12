@@ -2,11 +2,13 @@ package fr.siovision.voyages.application.service.impl;
 
 import fr.siovision.voyages.application.service.RefreshTokenService;
 import fr.siovision.voyages.application.service.RotateResult;
+import fr.siovision.voyages.domain.exception.UnauthorizedException;
 import fr.siovision.voyages.domain.model.RefreshToken;
 import fr.siovision.voyages.domain.model.User;
 import fr.siovision.voyages.infrastructure.repository.RefreshTokenRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RefreshTokenServiceImpl implements RefreshTokenService {
@@ -136,7 +139,8 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     }
 
     private static RuntimeException unauthorized(String reason) {
-        return new RuntimeException("unauthorized:" + reason);
+        log.warn("Refresh token rejected: {}", reason);
+        return new UnauthorizedException();
     }
 
 }

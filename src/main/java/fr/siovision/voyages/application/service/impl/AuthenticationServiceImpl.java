@@ -127,7 +127,7 @@ public class AuthenticationServiceImpl  implements AuthenticationService {
         User user = credential.getUser();
 
         // Créer un JWT
-        String accessToken = jwtService.generateAccessToken(user);
+        String accessToken = jwtService.generateAccessToken(user, List.of("webauthn"));
         String refreshToken = refreshTokenService.issue(user);
 
         return AuthResponse.builder()
