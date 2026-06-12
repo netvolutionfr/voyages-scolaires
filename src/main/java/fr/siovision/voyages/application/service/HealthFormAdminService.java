@@ -1,8 +1,5 @@
 package fr.siovision.voyages.application.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import fr.siovision.voyages.domain.model.StudentHealthForm;
 import fr.siovision.voyages.domain.model.User;
 import fr.siovision.voyages.infrastructure.dto.HealthFormAdminDTO;
@@ -14,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.UUID;
 
 @Service
@@ -26,6 +22,7 @@ public class HealthFormAdminService {
     private final UserRepository userRepo;
     private final CurrentUserService currentUserService;
     private final StudentHealthFormRepository studentHealthFormRepository;
+    private final HealthFormPayloadRenderer healthFormPayloadRenderer;
 
     /**
      * Retourne la dernière fiche sanitaire de l'élève (si elle existe).
@@ -43,19 +40,7 @@ public class HealthFormAdminService {
         // RGPD: journaliser l'accès + finalité (tripId)
         log.info("Accès à la fiche sanitaire de l'utilisateur ID {} par administrateur ou prof {} pour voyage {}", student.getEmail(), currentUser.getEmail(), tripId);
 
-        // update payload to add updatedAt field if form exists
-        String content = null;
-        if (form != null) {
-            try {
-                ObjectMapper objectMapper = new ObjectMapper();
-                JsonNode rootNode = objectMapper.readTree(form.getPayload());
-                ((ObjectNode) rootNode).put("updatedAt", Instant.now().toString());
-                content = objectMapper.writeValueAsString(rootNode);
-            } catch (Exception e) {
-                log.warn("Failed to add updatedAt to health form payload", e);
-            }
-            content = form.getPayload();
-        }
+        String content = healthFormPayloadRenderer.render(form);
 
         if (content != null) {
             return new HealthFormAdminDTO(true, content);

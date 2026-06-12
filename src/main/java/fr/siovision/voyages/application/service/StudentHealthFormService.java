@@ -2,7 +2,6 @@ package fr.siovision.voyages.application.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import fr.siovision.voyages.domain.model.StudentHealthForm;
 import fr.siovision.voyages.domain.model.User;
 import fr.siovision.voyages.infrastructure.repository.StudentHealthFormRepository;
@@ -20,25 +19,14 @@ import java.time.Instant;
 public class StudentHealthFormService {
     private final StudentHealthFormRepository studentHealthFormRepository;
     private final CurrentUserService currentUserService;
+    private final HealthFormPayloadRenderer healthFormPayloadRenderer;
+    private final ObjectMapper objectMapper;
 
-    @Transactional
+    @Transactional(readOnly = true)
     public String getFormByStudent() {
         User user = currentUserService.getCurrentUser();
         StudentHealthForm form = studentHealthFormRepository.findByStudentId(user.getId());
-
-        // update payload to add updatedAt field if form exists
-        if (form != null) {
-            try {
-                ObjectMapper objectMapper = new ObjectMapper();
-                JsonNode rootNode = objectMapper.readTree(form.getPayload());
-                ((ObjectNode) rootNode).put("updatedAt", Instant.now().toString());
-                return objectMapper.writeValueAsString(rootNode);
-            } catch (Exception e) {
-                log.warn("Failed to add updatedAt to health form payload", e);
-            }
-            return form.getPayload();
-        }
-        return null;
+        return healthFormPayloadRenderer.render(form);
     }
 
     @Transactional
@@ -53,7 +41,6 @@ public class StudentHealthFormService {
         form.setSignedAt(Instant.now());
         // extract validUntil from payload if present (format "validUntil": "2024-12-31")
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
             JsonNode rootNode = objectMapper.readTree(jsonPayload);
             if (rootNode.has("validUntil")) {
                 String validUntilStr = rootNode.get("validUntil").asText();
