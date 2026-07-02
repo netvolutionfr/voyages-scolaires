@@ -7,6 +7,35 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [Unreleased] — 2026-07-02 — RGPD : droit d'accès et portabilité (Phase 1)
+
+Première étape de la mise en conformité RGPD. Voir
+[`tasks/rgpd-plan.md`](tasks/rgpd-plan.md) et les décisions tracées dans
+[`docs/adr/`](docs/adr/README.md) (ADR-0002 à 0006).
+
+### Added
+
+- **`GET /api/me/data-export`** (`GdprController`) — export JSON complet des
+  données de l'utilisateur courant (droit d'accès Art. 15 / portabilité
+  Art. 20 RGPD), servi en pièce jointe (`Content-Disposition: attachment`).
+  Contenu : profil (déchiffré), consentement, tuteur légal, liens familiaux,
+  inscriptions et préférences voyages, métadonnées documents, fiche santé
+  (déchiffrée), passkeys et dernière connexion.
+  Exclusions volontaires : hashes de tokens, DEK/IV des documents, clés
+  WebAuthn (`credentialId`/`coseKey`/`userHandle`), notes internes
+  d'établissement (`adminNotes`).
+- `GdprExportService` — orchestre l'agrégation en lecture seule
+  (`@Transactional(readOnly = true)`).
+- DTOs `infrastructure/dto/gdpr/*` (records) dédiés à l'export.
+- Requêtes ajoutées : `DocumentRepository.findAllByUserIdOrderByCreatedAtDesc`,
+  `ParentChildRepository.findByParentId/findByChildId`,
+  `RefreshTokenRepository.findMaxLastUsedAtByUser`.
+- Tests : `GdprExportServiceTest` (10 cas — mapping des champs, exclusions
+  vérifiées structurellement sur les records DTO, lecture seule) et
+  `GdprControllerTest` (nom de fichier, `@PreAuthorize`).
+
+---
+
 ## [Unreleased] — 2026-06-12 — Security Audit & Hardening
 
 Full structural and semantic security audit (Security by Design) covering the

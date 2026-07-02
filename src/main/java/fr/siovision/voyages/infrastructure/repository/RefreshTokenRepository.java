@@ -33,4 +33,8 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     @Query("delete from RefreshToken rt where rt.expiresAt < :now")
     int deleteAllExpired(@Param("now") Instant now);
 
+    // Dernière utilisation connue, tous statuts confondus (export RGPD)
+    @Query("select max(rt.lastUsedAt) from RefreshToken rt where rt.user = :user")
+    Optional<Instant> findMaxLastUsedAtByUser(@Param("user") User user);
+
 }

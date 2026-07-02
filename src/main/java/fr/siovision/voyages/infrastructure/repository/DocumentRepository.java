@@ -31,4 +31,7 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
 
     // previous latest (if any) BEFORE inserting the new one
     Optional<Document> findFirstByUserIdAndDocumentTypeIdOrderByCreatedAtDesc(Long userId, Long documentTypeId);
+
+    // Tous les documents d'un utilisateur, quel que soit leur statut (export RGPD)
+    List<Document> findAllByUserIdOrderByCreatedAtDesc(Long userId);
 }

@@ -41,3 +41,6 @@ secrets/
 com/
 
 .codegraph
+
+### macOS ###
+.DS_Store
