@@ -7,6 +7,51 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [Unreleased] — 2026-07-02 — RGPD : droit à l'effacement (Phase 3)
+
+Troisième et dernière étape de la mise en conformité RGPD (Art. 17). Voir
+[`tasks/rgpd-plan.md`](tasks/rgpd-plan.md) §5 et les ADR
+[0003](docs/adr/0003-effacement-par-suppression-totale.md),
+[0004](docs/adr/0004-confirmation-de-leffacement-par-otp-email.md),
+[0005](docs/adr/0005-droits-rgpd-des-mineurs-matrice-par-role.md),
+[0006](docs/adr/0006-refus-409-effacement-dun-tuteur-legal-actif.md).
+
+### Added
+
+- **`POST /api/me/delete-request`** — envoie un code OTP de confirmation
+  (`OtpToken.Purpose.ACCOUNT_DELETION`) à l'email du compte courant.
+- **`DELETE /api/me`** — effacement définitif, confirmé par le code OTP
+  (body `{"otp": "…"}`). Bloqué pour les comptes STUDENT (mineurs,
+  ADR-0005 → `403 student_self_erasure_forbidden`) et par trois garde-fous
+  (`409`) : dernier ADMIN actif (`last_active_admin`), inscription active à
+  un voyage en cours/à venir (`active_trip_registration`), tuteur légal d'un
+  enfant encore actif (`guardian_of_active_student`, ADR-0006).
+- `UserErasureService` — suppression totale (ADR-0003) : documents (lignes
+  DB + objets S3 via l'événement `DocumentStorageDeletionEvent` existant,
+  crypto-shredding de la DEK), fiche santé, retrait des listes
+  d'accompagnateurs de voyage, inscriptions et préférences voyages, liens
+  familiaux, demandes de rectification ; tokens/credentials WebAuthn
+  couverts par cascade DB. Utilisé à la fois par le self-service et par
+  `DELETE /api/users/{id}` (ADMIN), qui était jusqu'ici cassé (violation FK
+  dès qu'un utilisateur avait des documents ou des tokens).
+- Migration `V3__gdpr_erasure_support.sql` — `ON DELETE CASCADE` sur les
+  tables purement techniques (`otp_tokens`, `refresh_tokens`,
+  `web_authn_credential`), `ON DELETE SET NULL` sur
+  `users.legal_guardian_user_id`. Documents, fiche santé, voyages et liens
+  familiaux restent **sans** cascade DB : leur suppression reste explicite
+  dans le code pour ne jamais masquer un oubli. Validé par exécution réelle
+  contre PostgreSQL 17 (cascade + blocage FK confirmés).
+- `Section.users` : retrait de `cascade=ALL, orphanRemoval=true` — supprimer
+  une section ne doit plus supprimer les utilisateurs qui y sont rattachés.
+- `ErasureBlockedException` (409) et gestion propre de
+  `OtpServiceImpl.InvalidOtpException` (400) /
+  `TooManyRequestsException` (429) dans `RestExceptionHandler` — corrige au
+  passage le flux OTP de connexion, qui renvoyait 500 sur un code invalide.
+- Tests : `UserErasureServiceTest` (10 cas), `OtpServiceImplDeletionTest`
+  (6 cas), extension de `GdprControllerTest` (5 cas).
+
+---
+
 ## [Unreleased] — 2026-07-02 — RGPD : droit de rectification (Phase 2)
 
 Deuxième étape de la mise en conformité RGPD (Art. 16). Voir

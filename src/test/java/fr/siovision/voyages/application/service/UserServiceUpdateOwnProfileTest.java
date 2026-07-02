@@ -27,6 +27,7 @@ class UserServiceUpdateOwnProfileTest {
     @Mock UserRepository userRepository;
     @Mock UserMapper userMapper;
     @Mock SectionRepository sectionRepository;
+    @Mock UserErasureService userErasureService;
 
     private UserService userService;
     private User user;
@@ -34,7 +35,7 @@ class UserServiceUpdateOwnProfileTest {
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userRepository, userMapper, sectionRepository);
+        userService = new UserService(userRepository, userMapper, sectionRepository, userErasureService);
 
         UUID publicId = UUID.fromString("11111111-1111-1111-1111-111111111111");
         user = new User();

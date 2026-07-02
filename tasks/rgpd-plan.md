@@ -263,7 +263,7 @@ conservation (registres, comptabilité). Deux options :
 |---|---|---|---|
 | **1** | Export JSON (accès + portabilité) — lecture seule | Faible | ✅ **Livré 2026-07-02** — `GET /api/me/data-export`, `GdprExportService`, DTOs `infrastructure/dto/gdpr/*`, 12 tests |
 | **2** | Rectification (`PATCH /api/me/profile` + demandes identité) | Faible | ✅ **Livré 2026-07-02** — `PATCH /api/me/profile`, `POST /api/me/rectification-request`, `GET`/`PATCH /api/users/rectification-requests`, `RectificationRequest` + migration V2, 18 tests |
-| **3** | Migration FK + `UserErasureService` + `DELETE /api/me` + fix admin delete + fix `Section` cascade | Élevé (destructif) | À faire |
+| **3** | Migration FK + `UserErasureService` + `DELETE /api/me` + fix admin delete + fix `Section` cascade | Élevé (destructif) | ✅ **Livré 2026-07-02** — `POST /api/me/delete-request`, `DELETE /api/me`, `UserErasureService`, migration V3 (validée contre PostgreSQL réel), `DELETE /api/users/{id}` rebranché, 21 tests |
 
 ## 9. Arbitrages (décisions du 2026-07-02 — tracées dans [`docs/adr/`](../docs/adr/README.md))
 

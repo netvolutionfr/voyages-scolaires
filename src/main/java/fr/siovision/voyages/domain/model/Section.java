@@ -48,7 +48,11 @@ public class Section {
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
 
-    @OneToMany(mappedBy = "section", cascade = CascadeType.ALL, orphanRemoval = true)
+    /**
+     * ADR-0003 : ne jamais cascader la suppression des utilisateurs depuis la Section
+     * (une suppression de section ne doit pas effacer les comptes qui y sont rattachés).
+     */
+    @OneToMany(mappedBy = "section")
     private Set<User> users;
 
     private LocalDateTime createdAt;

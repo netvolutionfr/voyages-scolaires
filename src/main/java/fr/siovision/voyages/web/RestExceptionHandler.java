@@ -1,5 +1,7 @@
 package fr.siovision.voyages.web;
 
+import fr.siovision.voyages.application.service.impl.OtpServiceImpl;
+import fr.siovision.voyages.domain.exception.ErasureBlockedException;
 import fr.siovision.voyages.domain.exception.ProfilNotFoundException;
 import fr.siovision.voyages.domain.exception.UnauthorizedException;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +47,25 @@ public class RestExceptionHandler {
         log.warn("Bad request: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("error", "Invalid request"));
+    }
+
+    @ExceptionHandler(ErasureBlockedException.class)
+    public ResponseEntity<?> handleErasureBlocked(ErasureBlockedException e) {
+        log.warn("Erasure blocked: {}", e.getCode());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("error", e.getCode()));
+    }
+
+    @ExceptionHandler(OtpServiceImpl.InvalidOtpException.class)
+    public ResponseEntity<?> handleInvalidOtp(OtpServiceImpl.InvalidOtpException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", "invalid_otp"));
+    }
+
+    @ExceptionHandler(OtpServiceImpl.TooManyRequestsException.class)
+    public ResponseEntity<?> handleTooManyOtpRequests(OtpServiceImpl.TooManyRequestsException e) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(Map.of("error", "too_many_requests"));
     }
 
     @ExceptionHandler(RuntimeException.class)

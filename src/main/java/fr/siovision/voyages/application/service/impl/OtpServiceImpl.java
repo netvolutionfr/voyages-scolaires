@@ -173,6 +173,72 @@ public class OtpServiceImpl implements OtpService {
         // 3) Réutilise la génération standard : nouveau code, nouveau hash, envoi e-mail
         issueAndSend(user);
     }
+    /* ADR-0004 : confirmation de l'effacement de compte — même machinerie (BCrypt, verrou
+       pessimiste, cooldown) que ACCOUNT_VERIFICATION, mais sans marquer le compte vérifié
+       ni émettre de nouvelle session : ce n'est pas un login. */
+
+    @Override
+    @Transactional
+    public void issueDeletionOtp(User user) {
+        if (user == null) throw new IllegalArgumentException("user cannot be null");
+
+        var existing = otpRepo.findLatestPendingForUpdate(
+                user, OtpToken.Purpose.ACCOUNT_DELETION, OtpToken.Status.PENDING
+        );
+        if (existing.isPresent()) {
+            var last = existing.get();
+            var permissible = last.getCreatedAt().plus(resendCooldownSeconds, ChronoUnit.SECONDS);
+            if (Instant.now().isBefore(permissible)) {
+                throw new TooManyRequestsException("Please wait before requesting a new code.");
+            }
+            last.setStatus(OtpToken.Status.EXPIRED);
+        }
+
+        String plainCode = generateNumericOtp(otpLength);
+        String hash = passwordEncoder.encode(plainCode);
+
+        OtpToken token = OtpToken.builder()
+                .user(user)
+                .purpose(OtpToken.Purpose.ACCOUNT_DELETION)
+                .codeHash(hash)
+                .expiresAt(Instant.now().plus(otpTtlMinutes, ChronoUnit.MINUTES))
+                .status(OtpToken.Status.PENDING)
+                .attempts(0)
+                .build();
+
+        otpRepo.save(token);
+        mailService.sendOtpEmail(user, plainCode, otpTtlMinutes);
+    }
+
+    @Override
+    @Transactional
+    public void verifyDeletionOtp(User user, String otpCode) {
+        OtpToken token = otpRepo.findLatestPendingForUpdate(
+                        user, OtpToken.Purpose.ACCOUNT_DELETION, OtpToken.Status.PENDING)
+                .orElseThrow(() -> new InvalidOtpException("No validation code found. Please request a new code."));
+
+        if (Instant.now().isAfter(token.getExpiresAt())) {
+            token.setStatus(OtpToken.Status.EXPIRED);
+            throw new InvalidOtpException("Expired code. Please request a new code.");
+        }
+
+        if (token.getAttempts() >= maxAttempts) {
+            token.setStatus(OtpToken.Status.EXPIRED);
+            throw new InvalidOtpException("Maximum number of attempts exceeded. Please request a new code.");
+        }
+
+        token.setAttempts(token.getAttempts() + 1);
+
+        boolean ok = passwordEncoder.matches(otpCode, token.getCodeHash());
+        if (!ok) {
+            throw new InvalidOtpException("Invalid code. Please try again.");
+        }
+
+        token.setStatus(OtpToken.Status.USED);
+        token.setConsumedAt(Instant.now());
+        otpRepo.save(token);
+    }
+
     /* Helpers */
 
     private static String generateNumericOtp(int length) {

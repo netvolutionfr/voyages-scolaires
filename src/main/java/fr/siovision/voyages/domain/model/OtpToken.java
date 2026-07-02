@@ -13,7 +13,7 @@ import java.time.Instant;
 })
 public class OtpToken {
 
-    public enum Purpose { ACCOUNT_VERIFICATION }
+    public enum Purpose { ACCOUNT_VERIFICATION, ACCOUNT_DELETION }
     public enum Status { PENDING, USED, EXPIRED }
 
     @Id

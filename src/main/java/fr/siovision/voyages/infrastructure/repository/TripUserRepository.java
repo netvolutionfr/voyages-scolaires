@@ -2,12 +2,14 @@ package fr.siovision.voyages.infrastructure.repository;
 
 import fr.siovision.voyages.domain.model.TripRegistrationStatus;
 import fr.siovision.voyages.domain.model.TripUser;
+import fr.siovision.voyages.domain.model.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -44,6 +46,17 @@ public interface TripUserRepository extends JpaRepository<TripUser, Long>, JpaSp
     boolean existsByTrip_IdAndUser_Id(Long tripId, Long userId);
 
     Page<TripUser> findAll(Specification<TripUser> spec, Pageable pageable);
+
+    // Effacement RGPD : suppression explicite plutôt que cascade JPA (ADR-0003 §5.2) —
+    // le cascade ne joue que si la collection user.trips est chargée en mémoire.
+    @Modifying
+    @Query(value = "DELETE FROM trip_users WHERE users_id IN (SELECT id FROM trip_user WHERE user_id = :userId)",
+            nativeQuery = true)
+    void deleteTripUsersJoinRows(@Param("userId") Long userId);
+
+    @Modifying
+    @Query("delete from TripUser tu where tu.user = :user")
+    void deleteAllByUser(@Param("user") User user);
 
     interface TripRegistrationRow {
         Long getRegistrationId();

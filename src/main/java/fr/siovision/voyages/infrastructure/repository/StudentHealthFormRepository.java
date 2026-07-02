@@ -26,6 +26,9 @@ public interface StudentHealthFormRepository extends JpaRepository<StudentHealth
 
     int deleteByValidUntilBefore(Instant now);
 
+    // Effacement RGPD
+    int deleteByStudentId(Long studentId);
+
     // Returns ALL forms for the userIds, newest first (signedAt takes precedence over updatedAt)
     @Query("""
         select f from StudentHealthForm f

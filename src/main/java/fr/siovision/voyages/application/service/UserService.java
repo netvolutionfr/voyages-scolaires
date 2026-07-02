@@ -36,6 +36,7 @@ public class UserService {
             UserRole.ADMIN, UserRole.TEACHER, UserRole.PARENT, UserRole.STUDENT
     );
     private final SectionRepository sectionRepository;
+    private final UserErasureService userErasureService;
 
     private UserRole extractRole(Jwt jwt) {
         java.util.Set<String> bag = new java.util.HashSet<>();
@@ -241,7 +242,7 @@ public class UserService {
         User user = userRepository.findByPublicId(publicId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userPublicId));
 
-        userRepository.delete(user);
-        log.info("Suppression de l'utilisateur {} par administrateur {}", user.getEmail(), jwt.getSubject());
+        userErasureService.erase(user);
+        log.info("Suppression de l'utilisateur {} par administrateur {}", user.getPublicId(), jwt.getSubject());
     }
 }

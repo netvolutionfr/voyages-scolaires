@@ -2,6 +2,7 @@ package fr.siovision.voyages.infrastructure.repository;
 
 import fr.siovision.voyages.domain.model.Document;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -34,4 +35,10 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
 
     // Tous les documents d'un utilisateur, quel que soit leur statut (export RGPD)
     List<Document> findAllByUserIdOrderByCreatedAtDesc(Long userId);
+
+    // Effacement RGPD : nettoyage défensif de la table de jointure users_documents
+    // (mapping User.documents non utilisé en pratique, mais purgé par prudence avant DELETE).
+    @Modifying
+    @Query(value = "DELETE FROM users_documents WHERE user_id = :userId", nativeQuery = true)
+    void deleteUserDocumentLinks(@Param("userId") Long userId);
 }
