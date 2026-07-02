@@ -7,6 +7,35 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [Unreleased] — 2026-07-02 — RGPD : droit de rectification (Phase 2)
+
+Deuxième étape de la mise en conformité RGPD (Art. 16). Voir
+[`tasks/rgpd-plan.md`](tasks/rgpd-plan.md) §4 et
+[ADR-0002](docs/adr/0002-rectification-identite-via-table-de-demandes.md).
+
+### Added
+
+- **`PATCH /api/me/profile`** (`UserController`) — rectification en
+  self-service des champs de contact (`telephone`, `displayName`, `gender`),
+  sémantique PATCH (champ absent = inchangé). `UserService.updateOwnProfile`.
+- **`POST /api/me/rectification-request`** — soumission d'une demande de
+  rectification pour un champ d'état civil (`FIRST_NAME`, `LAST_NAME`,
+  `BIRTH_DATE`, `EMAIL`), non modifiable en self-service. Validation légère
+  du format (email, date) avant enregistrement.
+- **`GET /api/users/rectification-requests`** (ADMIN) — liste paginée des
+  demandes filtrées par statut (`PENDING` par défaut).
+- **`PATCH /api/users/rectification-requests/{id}`** (ADMIN) — clôture une
+  demande (`APPLIED`/`REJECTED`) avec commentaire ; la modification du champ
+  lui-même reste manuelle via `PUT /api/users/{id}` (séparation volontaire,
+  cf. ADR-0002).
+- Entité `RectificationRequest` + migration `V2__rectification_request.sql`.
+- `POST /api/me` (`updateTelephone`) marqué `@Deprecated`, conservé pour
+  compatibilité front le temps de la bascule.
+- Tests : `RectificationRequestServiceTest` (10 cas), `UserServiceUpdateOwnProfileTest`
+  (3 cas), `RectificationRequestControllerTest` (5 cas).
+
+---
+
 ## [Unreleased] — 2026-07-02 — RGPD : droit d'accès et portabilité (Phase 1)
 
 Première étape de la mise en conformité RGPD. Voir

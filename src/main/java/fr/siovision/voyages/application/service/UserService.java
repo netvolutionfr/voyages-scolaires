@@ -3,6 +3,7 @@ package fr.siovision.voyages.application.service;
 import fr.siovision.voyages.domain.model.Section;
 import fr.siovision.voyages.domain.model.User;
 import fr.siovision.voyages.domain.model.UserRole;
+import fr.siovision.voyages.infrastructure.dto.ProfileUpdateRequest;
 import fr.siovision.voyages.infrastructure.dto.UserCreateRequest;
 import fr.siovision.voyages.infrastructure.dto.UserResponse;
 import fr.siovision.voyages.infrastructure.dto.UserTelephoneRequest;
@@ -52,6 +53,8 @@ public class UserService {
         return UserRole.UNKNOWN;
     }
 
+    /** @deprecated remplacé par {@link #updateOwnProfile(Jwt, ProfileUpdateRequest)} */
+    @Deprecated
     @Transactional
     public UserResponse updateUserTelephone(Jwt jwt, UserTelephoneRequest request) {
         UUID userId = UUID.fromString(jwt.getSubject());
@@ -61,6 +64,30 @@ public class UserService {
         user.setTelephone(request.getTelephone());
         userRepository.save(user);
 
+        return userMapper.toDTO(user);
+    }
+
+    /** Rectification en self-service (Art. 16 RGPD) des champs de contact : telephone, displayName, gender. */
+    @Transactional
+    public UserResponse updateOwnProfile(Jwt jwt, ProfileUpdateRequest request) {
+        UUID publicId = UUID.fromString(jwt.getSubject());
+        User user = userRepository.findByPublicId(publicId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + publicId));
+
+        if (request.getTelephone() != null) {
+            user.setTelephone(request.getTelephone());
+        }
+        if (request.getDisplayName() != null) {
+            user.setDisplayName(request.getDisplayName());
+        }
+        if (request.getGender() != null) {
+            if (!request.getGender().equals("M") && !request.getGender().equals("F") && !request.getGender().equals("N")) {
+                throw new IllegalArgumentException("Invalid gender value: " + request.getGender());
+            }
+            user.setGender(request.getGender());
+        }
+
+        userRepository.save(user);
         return userMapper.toDTO(user);
     }
 

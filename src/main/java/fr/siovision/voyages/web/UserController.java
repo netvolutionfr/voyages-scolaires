@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import fr.siovision.voyages.application.service.UserService;
 import fr.siovision.voyages.domain.model.User;
 import fr.siovision.voyages.domain.model.UserRole;
+import fr.siovision.voyages.infrastructure.dto.ProfileUpdateRequest;
 import fr.siovision.voyages.infrastructure.dto.UserCreateRequest;
 import fr.siovision.voyages.infrastructure.dto.UserResponse;
 import fr.siovision.voyages.infrastructure.dto.UserTelephoneRequest;
@@ -33,15 +34,26 @@ public class UserController {
     private final UserMapper userMapper;
 
     @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserResponse> getCurrentUser(@AuthenticationPrincipal Jwt jwt) {
         User user = userService.getUserByJwt(jwt);
         UserResponse userResponse = userMapper.toDTO(user);
         return ResponseEntity.ok(userResponse);
     }
 
+    /** @deprecated remplacé par {@link #updateProfile(Jwt, ProfileUpdateRequest)} */
+    @Deprecated
     @PostMapping("/me")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserResponse> updateTelephone(@AuthenticationPrincipal Jwt jwt, @RequestBody UserTelephoneRequest request) {
         UserResponse user = userService.updateUserTelephone(jwt, request);
+        return ResponseEntity.ok(user);
+    }
+
+    @PatchMapping("/me/profile")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserResponse> updateProfile(@AuthenticationPrincipal Jwt jwt, @RequestBody ProfileUpdateRequest request) {
+        UserResponse user = userService.updateOwnProfile(jwt, request);
         return ResponseEntity.ok(user);
     }
 
