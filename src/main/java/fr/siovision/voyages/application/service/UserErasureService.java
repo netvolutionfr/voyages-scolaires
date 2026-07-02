@@ -43,7 +43,7 @@ public class UserErasureService {
     @Transactional
     public void eraseSelf(User user) {
         if (user.getRole() == UserRole.STUDENT) {
-            throw new ErasureBlockedException("student_self_erasure_forbidden");
+            throw new ErasureBlockedException("student_self_erasure_forbidden", org.springframework.http.HttpStatus.FORBIDDEN);
         }
         erase(user);
     }

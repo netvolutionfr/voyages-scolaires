@@ -152,6 +152,19 @@ class GdprControllerTest {
     }
 
     @Test
+    void deleteMyAccount_propagatesStudentSelfErasureAs403() throws Exception {
+        doThrow(new ErasureBlockedException("student_self_erasure_forbidden",
+                org.springframework.http.HttpStatus.FORBIDDEN))
+                .when(userErasureService).eraseSelf(any());
+
+        mockMvc.perform(delete("/api/me")
+                        .contentType("application/json")
+                        .content("{\"otp\":\"123456\"}"))
+                .andExpect(status().isForbidden())
+                .andExpect(content().json("{\"error\":\"student_self_erasure_forbidden\"}"));
+    }
+
+    @Test
     void deleteRequestAndDeleteHandlers_requireAuthentication() throws NoSuchMethodException {
         Method deleteRequestHandler = GdprController.class.getMethod("requestAccountDeletion");
         Method deleteHandler = GdprController.class.getMethod(

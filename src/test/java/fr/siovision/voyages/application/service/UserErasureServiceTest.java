@@ -166,9 +166,22 @@ class UserErasureServiceTest {
 
         assertThatThrownBy(() -> service.eraseSelf(user))
                 .isInstanceOf(ErasureBlockedException.class)
-                .hasMessage("student_self_erasure_forbidden");
+                .hasMessage("student_self_erasure_forbidden")
+                .extracting(ex -> ((ErasureBlockedException) ex).getStatus())
+                .isEqualTo(org.springframework.http.HttpStatus.FORBIDDEN);
 
         verify(userRepository, never()).delete(any());
+    }
+
+    @Test
+    void erase_guardRails_useConflictStatus() {
+        user.setRole(UserRole.ADMIN);
+        when(userRepository.countByRoleAndStatus(UserRole.ADMIN, UserStatus.ACTIVE)).thenReturn(1L);
+
+        assertThatThrownBy(() -> service.erase(user))
+                .isInstanceOf(ErasureBlockedException.class)
+                .extracting(ex -> ((ErasureBlockedException) ex).getStatus())
+                .isEqualTo(org.springframework.http.HttpStatus.CONFLICT);
     }
 
     @Test

@@ -52,7 +52,7 @@ public class RestExceptionHandler {
     @ExceptionHandler(ErasureBlockedException.class)
     public ResponseEntity<?> handleErasureBlocked(ErasureBlockedException e) {
         log.warn("Erasure blocked: {}", e.getCode());
-        return ResponseEntity.status(HttpStatus.CONFLICT)
+        return ResponseEntity.status(e.getStatus())
                 .body(Map.of("error", e.getCode()));
     }
 
