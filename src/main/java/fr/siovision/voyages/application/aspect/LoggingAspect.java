@@ -10,8 +10,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.util.Arrays;
-
 @Aspect
 @Component
 @Profile("dev")
@@ -32,13 +30,9 @@ public class LoggingAspect {
         String endpoint = request.getRequestURI();
         String httpMethod = request.getMethod();
 
-        // Le 'payload' d'entrée correspond aux arguments de la méthode du contrôleur
-        String inputPayload = Arrays.toString(joinPoint.getArgs());
-
         log.info("---- REQUÊTE ENTRÉE ----");
         log.info("Endpoint: {} {}", httpMethod, endpoint);
         log.info("Méthode: {}.{}", className, methodName);
-        log.info("Payload: {}", inputPayload);
         log.info("------------------------");
 
         long startTime = System.currentTimeMillis();
@@ -56,15 +50,9 @@ public class LoggingAspect {
         // 2. Log de la Sortie (Réponse, Contenu et Temps)
         long timeTaken = System.currentTimeMillis() - startTime;
 
-        // La 'réponse' correspond à la valeur de retour de la méthode
-        String outputResponse = result != null ? result.toString() : "void/null";
-
         log.info("---- RÉPONSE SORTIE ----");
         log.info("Endpoint: {} {}", httpMethod, endpoint);
         log.info("Temps: {} ms", timeTaken);
-        // *ATTENTION* : Logguer le toString() d'objets complexes peut être verbeux.
-        // Assurez-vous d'implémenter toString() sur vos DTOs ou d'utiliser un mapper JSON ici.
-        log.info("Réponse Contenu: {}", outputResponse);
         log.info("------------------------");
 
         return result;
