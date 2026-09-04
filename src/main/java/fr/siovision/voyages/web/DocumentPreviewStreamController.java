@@ -1,6 +1,7 @@
 package fr.siovision.voyages.web;
 
 import fr.siovision.voyages.application.security.EncryptionService;
+import fr.siovision.voyages.application.security.TripSecurity;
 import fr.siovision.voyages.application.service.CurrentUserService;
 import fr.siovision.voyages.application.service.StorageService;
 import fr.siovision.voyages.domain.model.UserRole;
@@ -34,6 +35,7 @@ public class DocumentPreviewStreamController {
     private final StorageService storageService;
     private final EncryptionService encryptionService;
     private final DocumentRepository documentRepository;
+    private final TripSecurity tripSecurity;
 
     @GetMapping(value = "/{docId}/preview")
     @PreAuthorize("isAuthenticated()")
@@ -44,10 +46,12 @@ public class DocumentPreviewStreamController {
         var doc = documentRepository.findByPublicId(docId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Document introuvable"));
 
-        // Autorisations minimales (adapte si besoin: parent/teacher/chaperone/admin)
+        // A teacher may only read documents linked to a trip they chaperone.
         boolean owner = doc.getUser() != null && doc.getUser().getId().equals(user.getId());
-        boolean isAdminOrTeacher = user.getRole() == UserRole.ADMIN || user.getRole() == UserRole.TEACHER;
-        if (!owner && !isAdminOrTeacher) {
+        boolean isAdmin = user.getRole() == UserRole.ADMIN;
+        boolean authorizedTeacher = user.getRole() == UserRole.TEACHER
+                && tripSecurity.canPreviewDocument(docId.toString());
+        if (!owner && !isAdmin && !authorizedTeacher) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès non autorisé");
         }
 
