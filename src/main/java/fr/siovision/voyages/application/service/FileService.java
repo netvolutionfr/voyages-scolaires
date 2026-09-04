@@ -11,8 +11,6 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 
 import java.net.URL;
 import java.time.Duration;
-import java.time.LocalDate;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -26,27 +24,12 @@ public class FileService {
     @Value("${app.s3.presign-duration-min:10}") private int presignMinutes;
 
     /** Génère une clé unique pour une couverture de voyage. */
-    public String buildCoverKey(String originalFilename) {
-        return "cover/" + UUID.randomUUID() + "-" + sanitize(originalFilename);
-    }
-
-    /** Génère une clé canonique pour un document utilisateur. */
-    public String buildDocumentKey(long userId, String docCode, String originalFilename) {
-        if (docCode == null || docCode.isBlank()) docCode = "general";
-        final LocalDate d = LocalDate.now();
-        return String.format(
-                "users/%d/%s/%04d/%02d/%s-%s",
-                userId,
-                docCode.toLowerCase(Locale.ROOT),
-                d.getYear(),
-                d.getMonthValue(),
-                UUID.randomUUID(),
-                sanitize(originalFilename)
-        );
+    public String buildCoverKey(Long tripId, String originalFilename) {
+        return "trips/" + tripId + "/cover/" + UUID.randomUUID() + "-" + sanitize(originalFilename);
     }
 
     /** URL pré-signée pour upload (PUT) direct depuis le front. */
-    public Map<String, String> presignPut(String key, String contentType) {
+    public Map<String, String> presignPut(String key, String contentType, long contentLength) {
         if (contentType == null || contentType.isBlank()) {
             contentType = "application/octet-stream";
         }
@@ -54,6 +37,7 @@ public class FileService {
                 .bucket(bucket)
                 .key(key)
                 .contentType(contentType)
+                .contentLength(contentLength)
                 .build();
 
         PutObjectPresignRequest presign = PutObjectPresignRequest.builder()

@@ -4,6 +4,6 @@ public record TripRegistrationAdminViewDTO(
         Long registrationId,
         java.time.LocalDateTime registeredAt,
         String status,               // réutilise l’enum existant côté domaine (PENDING, ENROLLED, ...)
-        UserMiniDTO user,
+        RegistrationListUserDTO user,
         DocumentsSummaryDTO documentsSummary // peut être null si non demandé
 ) {}

@@ -194,13 +194,11 @@ public class TripRegistrationAdminService {
                 ? new SectionMiniDTO(r.getSectionId(), nz(r.getSectionLabel()))
                 : null;
 
-        // LISTE : pas de téléphone (pas d’accès aux données chiffrées ici)
-        var userMini = new UserMiniDTO(
+        // La vue liste exclut structurellement les coordonnées, réservées au détail.
+        var userMini = new RegistrationListUserDTO(
                 r.getUserPublicId(),
                 nz(r.getFirstName()),
                 nz(r.getLastName()),
-                nz(r.getEmail()),
-                null, // <- téléphone absent en liste
                 section
         );
 
