@@ -4,6 +4,7 @@ import fr.siovision.voyages.application.service.CurrentUserService;
 import fr.siovision.voyages.application.service.FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -18,6 +19,7 @@ public class FileController {
     private final CurrentUserService currentUserService; // pour l'id user
 
     @GetMapping("/presign")
+    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
     public Map<String, String> presign(
             @RequestParam String filename,
             @RequestParam(defaultValue = "image/jpeg") String contentType,
