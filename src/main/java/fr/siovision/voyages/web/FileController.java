@@ -1,6 +1,5 @@
 package fr.siovision.voyages.web;
 
-import fr.siovision.voyages.application.service.CurrentUserService;
 import fr.siovision.voyages.application.service.FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -15,44 +14,34 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class FileController {
 
-    private final FileService fileService;
-    private final CurrentUserService currentUserService; // pour l'id user
+    private static final long MAX_COVER_SIZE_BYTES = 12L * 1024 * 1024;
 
+    private final FileService fileService;
+
+    /**
+     * tripId est absent lors de la création d'un voyage (pas encore d'id) : dans ce cas
+     * on ne peut vérifier que le rôle, pas l'affectation au voyage. Une fois le voyage
+     * créé/édité, tripId est fourni et @tripSecurity.canViewTrip est appliqué.
+     */
     @GetMapping("/presign")
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','TEACHER') and (#tripId == null or @tripSecurity.canViewTrip(#tripId))")
     public Map<String, String> presign(
+            @RequestParam(required = false) Long tripId,
             @RequestParam String filename,
             @RequestParam(defaultValue = "image/jpeg") String contentType,
-            @RequestParam(defaultValue = "cover") String mode,
-            @RequestParam(required = false) String docCode
+            @RequestParam long contentLength
     ) {
-        // Flux "cover"
-        if ("cover".equalsIgnoreCase(mode)) {
-            if (!isAllowedForCover(contentType)) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "contentType non autorisé pour une couverture");
-            }
-            String key = fileService.buildCoverKey(filename);
-            return fileService.presignPut(key, contentType);
+        if (!isAllowedForCover(contentType)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "contentType non autorisé pour une couverture");
         }
-
-        // Flux "document"
-        if ("document".equalsIgnoreCase(mode)) {
-            if (!isAllowedForDocument(contentType)) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "contentType non autorisé pour un document");
-            }
-            var user = currentUserService.getCurrentUser();
-            String key = fileService.buildDocumentKey(user.getId(), docCode, filename);
-            return fileService.presignPut(key, contentType);
+        if (contentLength <= 0 || contentLength > MAX_COVER_SIZE_BYTES) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "taille de couverture invalide (12 Mo maximum)");
         }
-
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "mode invalide (cover|document attendu)");
+        String key = fileService.buildCoverKey(tripId, filename);
+        return fileService.presignPut(key, contentType, contentLength);
     }
 
     private boolean isAllowedForCover(String ct) {
         return "image/jpeg".equals(ct) || "image/png".equals(ct) || "image/webp".equals(ct);
-    }
-
-    private boolean isAllowedForDocument(String ct) {
-        return "application/pdf".equals(ct) || "image/jpeg".equals(ct) || "image/png".equals(ct);
     }
 }
