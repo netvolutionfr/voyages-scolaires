@@ -1,5 +1,5 @@
 # ---- Build stage (Gradle) ----
-FROM gradle:8.9-jdk21 AS build
+FROM gradle:9.7-jdk21 AS build
 WORKDIR /workspace
 
 # 1) Copy only gradle descriptors first to leverage layer cache
