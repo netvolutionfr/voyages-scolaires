@@ -206,8 +206,8 @@ class GdprExportServiceTest {
         GdprExportResponse export = service.export();
 
         assertThat(export.healthForm()).isNotNull();
-        assertThat(objectMapper.valueToTree(export.healthForm().payload()).get("allergies").asText()).isEqualTo("aucune");
-        assertThat(objectMapper.valueToTree(export.healthForm().payload()).get("updatedAt").asText())
+        assertThat(export.healthForm().payload().get("allergies").asText()).isEqualTo("aucune");
+        assertThat(export.healthForm().payload().get("updatedAt").asText())
                 .isEqualTo("2026-01-11T00:00:00Z");
     }
 
