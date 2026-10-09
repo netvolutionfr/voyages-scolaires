@@ -21,7 +21,7 @@ RUN JAR="$(ls build/libs/*.jar | grep -v 'plain' | head -n1)" \
  && cp "$JAR" /workspace/app.jar
 
 # ---- Runtime stage ----
-FROM eclipse-temurin:21-jre
+FROM eclipse-temurin:25-jre
 WORKDIR /app
 
 # Basic hardening: run as non-root
