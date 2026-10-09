@@ -7,6 +7,34 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [Unreleased] — 2026-10-09 — Migration Spring Boot 4.1.1 validée
+
+### Changed
+
+- Spring Boot 3.5.16 → **4.1.1**, Java 21 et Gradle 8.14.3 conservés.
+- Adaptation des starters, Spring Security 7, Jackson 3 et Hibernate 7 ;
+  springdoc 3.1.1, WebAuthn4J 0.31.10.RELEASE et Hypersistence Hibernate 7.3.
+- Tomcat **11.0.26** explicitement fixé pour corriger les vulnérabilités critiques
+  détectées par Trivy dans la version fournie par le BOM.
+- Compatibilité OpenAPI : `JsonNode` décrit comme objet JSON ; conversion des
+  schémas polymorphiques désactivée en attendant une correction springdoc.
+- Déploiement limité à l'API, avec attente de disponibilité ; PostgreSQL et MinIO
+  restent en place. Le téléchargement MinIO depuis Quay avait bloqué le premier déploiement.
+- README, références techniques, consignes de contribution et `.env.example`
+  alignés sur la configuration réelle.
+
+### Validation
+
+- **106 tests réussis**, démarrage PostgreSQL 17 avec huit migrations Flyway et
+  validation Hibernate, santé `UP`, OpenAPI générée avec 38 chemins.
+- CI, Trivy et Qodana réussis ; déploiement réussi sur **https://campusaway.fr/api/**.
+- **Connexion passkey confirmée par l'utilisateur le 9 octobre 2026**.
+- Hébergement de test, sans données réelles ni utilisation réelle pour des voyages.
+- Implémentation : [PR #15](https://github.com/netvolutionfr/voyages-scolaires/pull/15).
+  Déploiement : [PR #16](https://github.com/netvolutionfr/voyages-scolaires/pull/16).
+
+---
+
 ## [Unreleased] — 2026-07-02 — RGPD : droit à l'effacement (Phase 3)
 
 Troisième et dernière étape de la mise en conformité RGPD (Art. 17). Voir

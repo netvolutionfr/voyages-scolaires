@@ -21,7 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ./gradlew cyclonedxBom
 
 # Start dependencies (PostgreSQL + MinIO)
-docker-compose up -d
+docker compose up -d db minio minio-init
 ```
 
 Test reports are generated in `build/reports/tests/`.
@@ -30,7 +30,7 @@ Swagger UI is available at `http://localhost:8080/swagger-ui.html` in dev mode o
 
 ## Architecture
 
-Spring Boot 3.5 REST API using Java 21. Layered architecture:
+Spring Boot 4.1.1 REST API using Java 21. Layered architecture:
 
 ```
 fr.siovision.voyages/
@@ -53,7 +53,11 @@ fr.siovision.voyages/
 
 ## Key Design Decisions
 
+**Hosted environment:** Test application at `https://campusaway.fr`, API at `https://campusaway.fr/api/`. Passkey login validated by the user on 2026-10-09. See README and CHANGELOG for migration checks and known limits.
+
 **Authentication flow:** WebAuthn/Passkeys (primary) → OTP fallback → JWT access tokens (15min) + refresh token rotation (30 days). JWT is ES256-signed (ECDSA P-256, asymmetric); refresh tokens are tracked in DB with family-based invalidation. Private key signs; public key verifies. The public JWK is exposed at `GET /.well-known/jwks.json`. `kid` is included in every JWS header (RFC 7638 thumbprint) to support key rotation.
+
+Browser access/refresh tokens are delivered as HttpOnly cookies; use credentials in frontend requests. An explicit Bearer header takes precedence over the access cookie.
 
 **Field-level encryption:** Sensitive user fields (`gender`, `phone`, `birthDate`) are transparently encrypted/decrypted via JPA converters (`CryptoConverter`, `CryptoDateConverter`) using the `CRYPTO_KEK_B64` environment variable.
 
@@ -63,7 +67,7 @@ fr.siovision.voyages/
 - `dev`: CORS open to `localhost:3000/5173/8000`, Swagger enabled, request audit logging via `RequestAuditFilter`, AOP method logging via `LoggingAspect`
 - `prod`: Swagger disabled, CORS handled by reverse proxy, graceful shutdown enabled
 
-**Roles:** `ADMIN`, `PARENT`, `STUDENT`, `TEACHER` — stored as a `Set<Role>` on the `User` entity and embedded in JWT `roles` claim.
+**Roles:** `ADMIN`, `PARENT`, `STUDENT`, `TEACHER` — stored as a single `UserRole` on the `User` entity and embedded in the JWT `role` claim.
 
 ## Database
 
@@ -71,14 +75,14 @@ PostgreSQL with Flyway migrations in `src/main/resources/db/migration/`. Version
 
 ## Environment Variables
 
-A `.env` file at the project root is used locally. Minimum required:
+Copy `.env.example` and fill its required values. Spring Boot does not load `.env` automatically: export the variables or use EnvFile in the IDE. Key variables:
 
 ```
 SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/voyages
 SPRING_DATASOURCE_USERNAME=voyages
 SPRING_DATASOURCE_PASSWORD=changeit
 SPRING_PROFILES_ACTIVE=dev
-APP_FRONT_URL=http://localhost:5173
+APP_FRONTEND_URL=http://localhost:5173
 WEBAUTHN_ALLOWED_ORIGINS=http://localhost:5173
 WEBAUTHN_RP_ID=localhost
 WEBAUTHN_DEFAULT_ORIGIN=http://localhost:5173
