@@ -1,6 +1,6 @@
 package fr.siovision.voyages.web;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import fr.siovision.voyages.application.service.RectificationRequestService;
 import fr.siovision.voyages.domain.model.RectificationStatus;
 import fr.siovision.voyages.infrastructure.dto.rectification.RectificationRequestDTO;
@@ -13,7 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -43,14 +43,12 @@ class RectificationRequestControllerTest {
     @BeforeEach
     void setUp() {
         RectificationRequestController controller = new RectificationRequestController(rectificationRequestService);
-        // Spring Boot enregistre automatiquement JavaTimeModule et le module Jackson de
-        // Spring Data pour Page<T> ; hors contexte Spring (standalone), on les charge ici.
-        ObjectMapper objectMapper = new ObjectMapper()
-                .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule())
-                .registerModule(new org.springframework.data.web.config.SpringDataJacksonConfiguration.PageModule(null));
+        JsonMapper objectMapper = JsonMapper.builder()
+                .addModule(new org.springframework.data.web.config.SpringDataJackson3Configuration.PageModule(null))
+                .build();
         mockMvc = MockMvcBuilders
                 .standaloneSetup(controller)
-                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
+                .setMessageConverters(new JacksonJsonHttpMessageConverter(objectMapper))
                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .build();
     }

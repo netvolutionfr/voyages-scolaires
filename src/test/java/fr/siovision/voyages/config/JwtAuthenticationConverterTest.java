@@ -40,26 +40,28 @@ class JwtAuthenticationConverterTest {
 
         assertThat(authorities)
                 .extracting(GrantedAuthority::getAuthority)
-                .containsExactly("ROLE_ADMIN");
+                .containsExactlyInAnyOrder("ROLE_ADMIN", "FACTOR_BEARER");
     }
 
     @Test
-    void jwt_withRolesClaim_producesNoAuthority() {
+    void jwt_withRolesClaim_producesOnlyBearerFactor() {
         // "roles" (plural) is NOT the claim the converter reads — it reads "role" (singular)
         Jwt jwt = buildJwt(Map.of("roles", java.util.List.of("ADMIN")));
 
         Collection<GrantedAuthority> authorities = extractAuthorities(jwt);
 
-        assertThat(authorities).isEmpty();
+        assertThat(authorities).extracting(GrantedAuthority::getAuthority)
+                .containsExactlyInAnyOrder("FACTOR_BEARER");
     }
 
     @Test
-    void jwt_withNoRoleClaim_producesNoAuthority() {
+    void jwt_withNoRoleClaim_producesOnlyBearerFactor() {
         Jwt jwt = buildJwt(Map.of("sub", "user@example.com"));
 
         Collection<GrantedAuthority> authorities = extractAuthorities(jwt);
 
-        assertThat(authorities).isEmpty();
+        assertThat(authorities).extracting(GrantedAuthority::getAuthority)
+                .containsExactlyInAnyOrder("FACTOR_BEARER");
     }
 
     @Test
@@ -70,7 +72,7 @@ class JwtAuthenticationConverterTest {
 
         assertThat(authorities)
                 .extracting(GrantedAuthority::getAuthority)
-                .containsExactly("ROLE_TEACHER");
+                .containsExactlyInAnyOrder("ROLE_TEACHER", "FACTOR_BEARER");
 
         // Verify no double prefix
         assertThat(authorities)
@@ -79,12 +81,13 @@ class JwtAuthenticationConverterTest {
     }
 
     @Test
-    void jwt_withBlankRoleClaim_producesNoAuthority() {
+    void jwt_withBlankRoleClaim_producesOnlyBearerFactor() {
         Jwt jwt = buildJwt(Map.of("role", "  "));
 
         Collection<GrantedAuthority> authorities = extractAuthorities(jwt);
 
-        assertThat(authorities).isEmpty();
+        assertThat(authorities).extracting(GrantedAuthority::getAuthority)
+                .containsExactlyInAnyOrder("FACTOR_BEARER");
     }
 
     @Test
@@ -95,7 +98,7 @@ class JwtAuthenticationConverterTest {
 
         assertThat(authorities)
                 .extracting(GrantedAuthority::getAuthority)
-                .containsExactly("ROLE_STUDENT");
+                .containsExactlyInAnyOrder("ROLE_STUDENT", "FACTOR_BEARER");
     }
 
     @SuppressWarnings("unchecked")

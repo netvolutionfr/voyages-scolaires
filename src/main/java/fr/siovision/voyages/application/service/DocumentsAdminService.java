@@ -1,6 +1,6 @@
 package fr.siovision.voyages.application.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import fr.siovision.voyages.domain.model.StudentHealthForm;
 import fr.siovision.voyages.infrastructure.dto.*;
 import fr.siovision.voyages.infrastructure.repository.DocumentsAdminRepository;
@@ -156,8 +156,8 @@ public class DocumentsAdminService {
             return Collections.emptyMap();
         }
         try {
-            return objectMapper.readValue(json, new com.fasterxml.jackson.core.type.TypeReference<>() {});
-        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            return objectMapper.readValue(json, new tools.jackson.core.type.TypeReference<>() {});
+        } catch (tools.jackson.core.JacksonException e) {
             // Si tu préfères fail-fast :
             // throw new IllegalStateException("JSON invalide pour trip_condition: " + json, e);
             return Collections.emptyMap(); // pour l'instant : pas de condition = applicable à tous

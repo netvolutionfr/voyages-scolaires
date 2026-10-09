@@ -1,8 +1,8 @@
 package fr.siovision.voyages.application.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.webauthn4j.converter.util.ObjectConverter;
 import com.webauthn4j.data.*;
 import com.webauthn4j.verifier.exception.VerificationException;
@@ -162,7 +162,7 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
         JsonNode root;
         try {
             root = om.readTree(req.registrationRequest());
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
         JsonNode credentialNode = root.get("credential"); // <-- important
@@ -172,7 +172,7 @@ public class RegistrationFlowServiceImpl implements RegistrationFlowService {
         String credentialJson;
         try {
             credentialJson = om.writeValueAsString(credentialNode);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
 
