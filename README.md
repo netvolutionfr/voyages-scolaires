@@ -1,6 +1,6 @@
 # API REST pour application Voyages
 
-API écrite avec le framework Spring Boot.
+API Spring Boot **4.1.1**, Java **21**, Gradle **8.14.3** (wrapper fourni).
 Authentification basée sur WebAuthn/Passkeys, OTP et des JWT signés en ES256 (ECDSA P-256) côté applicatif.
 La clé publique de vérification est exposée sur `GET /.well-known/jwks.json`.
 
@@ -9,38 +9,41 @@ La clé publique de vérification est exposée sur `GET /.well-known/jwks.json`.
 Service REST gérant les participants, sections et entités liées à l'application "Voyages".
 Cette API utilise PostgreSQL comme base de données, S3/MinIO pour les fichiers et un serveur WebAuthn embarqué pour l'authentification.
 
+## Hébergement et validation
+
+- Frontend : https://campusaway.fr
+- Backend : **https://campusaway.fr/api/**. `api.campusaway.fr` n'est pas le backend de ce projet.
+- Environnement de test, sans données réelles ni utilisation réelle pour des voyages.
+- Migration déployée ; connexion par passkey confirmée par l'utilisateur le **9 octobre 2026**.
+- Validation de la migration : **106 tests réussis**, démarrage PostgreSQL 17 avec huit migrations Flyway et validation Hibernate, santé `UP`, OpenAPI avec 38 chemins ; CI, Trivy et Qodana réussis.
+
+Voir le [changelog](CHANGELOG.md) pour le détail des changements et limites.
+
 ## Prérequis
 
-- JDK 21 (ou version configurée dans le projet)
-- Gradle wrapper (fourni) ou Gradle installé
-- Docker & docker-compose (optionnel pour exécuter Postgres/MinIO localement)
-- Node/npm (si vous utilisez des outils front ou scripts complémentaires)
+- JDK 21
+- Gradle wrapper fourni
+- Docker avec Compose pour PostgreSQL et MinIO
 
 ## Variables d'environnement
 
-L'application lit des variables d'environnement (fichier `.env` recommandé) utilisées pour se connecter à la base de données, signer les JWT et exposer WebAuthn.
-Voici un exemple minimal (.env) :
+Copier `.env.example` en `.env`, puis renseigner les mots de passe, clés JWT,
+clés de chiffrement et accès SMTP. Les valeurs sont des exemples de développement,
+à remplacer avant tout usage réel. Ne jamais commiter de secrets.
 
-```
-SPRING_APPLICATION_NAME=voyages
-SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/voyages
-SPRING_DATASOURCE_USERNAME=voyages
-SPRING_DATASOURCE_PASSWORD=changeit
-SPRING_JPA_HIBERNATE_DDL_AUTO=update
-SPRING_PROFILES_ACTIVE=dev
+Spring Boot ne charge pas automatiquement `.env` : exporter les variables dans
+le terminal ou utiliser EnvFile dans l'IDE. Compose utilise `.env` et le transmet
+au conteneur API.
 
-APP_FRONT_URL=http://localhost:5173
-
-WEBAUTHN_ALLOWED_ORIGINS=http://localhost:5173
-WEBAUTHN_RP_ID=localhost
-WEBAUTHN_DEFAULT_ORIGIN=http://localhost:5173
-
-JWT_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\n<clé PKCS8 EC P-256, \n-escapés>\n-----END PRIVATE KEY-----
-JWT_PUBLIC_KEY=-----BEGIN PUBLIC KEY-----\n<clé SPKI, \n-escapés>\n-----END PUBLIC KEY-----
-JWT_ISSUER=https://voyages.local
-```
-
-Ne placez pas de secrets en clair dans le dépôt. Utilisez un mécanisme sécurisé pour CI/CD.
+- `APP_FRONTEND_URL` définit l'URL du frontend.
+- `WEBAUTHN_RP_ID` est un nom d'hôte sans schéma ni chemin : `localhost` en local,
+  `campusaway.fr` sur le serveur. Les origines incluent le schéma et le port éventuel.
+- `JWT_PRIVATE_KEY` : PEM PKCS8 EC P-256 ; `JWT_PUBLIC_KEY` : PEM SPKI.
+  Les retours à la ligne peuvent être représentés par des `\n` littéraux.
+  Voir [la génération des clés](CLAUDE.md#key-management).
+- La configuration lit actuellement `SPRING_JPA_HIBERNATE_DLL_AUTO` (avec `DLL`).
+  Utiliser `validate` : Flyway gère le schéma.
+- `COOKIE_SECURE=false` est réservé au développement HTTP local ; utiliser `true` en HTTPS.
 
 ## Lancer l'application en local
 
@@ -60,10 +63,12 @@ Ne placez pas de secrets en clair dans le dépôt. Utilisez un mécanisme sécur
 Le projet contient un `docker-compose.yml` pour démarrer Postgres, MinIO (S3) et l'image de référence de l'API. Exemple :
 
 ```bash
-docker-compose up -d
+docker compose up -d db minio minio-init
 ```
 
-Ensuite, soit consommer l'image packagée, soit lancer l'application avec Gradle/IDE en pointant vers les mêmes services (`SPRING_DATASOURCE_URL`, `S3_*`, etc.).
+Cette commande démarre uniquement les dépendances. PostgreSQL écoute sur `localhost:5432`, MinIO sur `localhost:9000` et sa console sur `localhost:9001`. Lancer ensuite l'API avec Gradle/IDE.
+
+L'image MinIO épinglée sur Quay a renvoyé une erreur d'accès lors de la migration : un premier démarrage nécessite une image disponible en cache ou un accès au registre rétabli.
 
 ### Lancer dans IntelliJ
 
@@ -79,7 +84,9 @@ Quand l'application tourne, l'OpenAPI / Swagger UI est disponible (si activé) :
 http://localhost:8080/swagger-ui.html
 ```
 
-(adapter l'URL si vous avez changé le port ou le contexte dans application.properties)
+OpenAPI : `http://localhost:8080/v3/api-docs`. Swagger et OpenAPI sont désactivés en profil `prod`.
+
+Pour la compatibilité Jackson 3 avec springdoc 3.1.1, les `JsonNode` sont décrits comme objets JSON et le convertisseur de schémas polymorphiques est désactivé. Réévaluer cette limite lors d'une mise à jour springdoc ou de l'ajout de DTO polymorphiques.
 
 ## Tests
 
@@ -106,7 +113,8 @@ Le jar sera dans `build/libs/`.
 - Vérifier les variables d'environnement (connexion DB, S3, JWT, WebAuthn).
 - Activer les logs `DEBUG` dans `application.properties` si besoin.
 - En cas d'erreur d'authentification, contrôler les origins déclarés (`WEBAUTHN_ALLOWED_ORIGINS`) et les clés `JWT_PRIVATE_KEY` / `JWT_PUBLIC_KEY`.
-- La clé publique active est consultable sans authentification sur `GET /actuator/health` et `GET /.well-known/jwks.json`.
+- Le JWKS public est exposé par l'application sur `GET /.well-known/jwks.json` (hors préfixe `/api` ; son accès public dépend du reverse proxy).
+- La santé interne est consultable sur `http://127.0.0.1:9090/actuator/health`. Actuator écoute uniquement sur l'interface locale et ne fournit pas les clés JWT.
 
 ## Contribuer
 
@@ -121,71 +129,50 @@ Le jar sera dans `build/libs/`.
 - MinIO / S3 API: https://min.io/docs/
 - Swagger / OpenAPI: https://swagger.io/
 
-## Endpoints principaux
+## Authentification et endpoints principaux
 
-Ci‑dessous une documentation concise des endpoints principaux exposés par l'API.
+Le navigateur reçoit les cookies HttpOnly `access_token` et `refresh_token`.
+Utiliser `credentials: 'include'` avec Fetch ou `withCredentials: true` avec Axios.
+L'API accepte aussi `Authorization: Bearer <access_token>`, prioritaire sur le cookie d'accès.
 
-Authentification
-- Toutes les requêtes protégées nécessitent un header `Authorization: Bearer <access_token>` émis par le service JWT interne (obtenu après WebAuthn/OTP).
+Les chemins sont identiques en local et sur le serveur : par exemple
+`https://campusaway.fr/api/me`.
 
-Participants
+| Méthode et chemin | Usage / accès |
+| --- | --- |
+| `GET /api/webauthn/authenticate/options` | Options de connexion passkey |
+| `POST /api/webauthn/authenticate/finish` | Vérification de la connexion et cookies |
+| `POST /api/otp/verify` | Vérification OTP |
+| `POST /api/auth/refresh` | Rotation du refresh token et renouvellement des cookies |
+| `POST /api/auth/logout` | Révocation et suppression des cookies |
+| `GET /api/me` | Profil courant, authentifié |
+| `PATCH /api/me/profile` | Modification des coordonnées, authentifié |
+| `GET /api/users` | Liste paginée, ADMIN ou TEACHER, filtrée par les règles métier |
+| `POST /api/users` | Création d'utilisateur, ADMIN |
+| `GET /api/sections` et `GET /api/sections/{id}` | Lecture, authentifié |
+| `GET /api/country` | Liste des pays, authentifié |
+| `GET /api/me/data-export` | Export RGPD du compte courant |
 
-- POST /api/participants
-  - Description : créer un participant.
-  - Autorisation : PARENT ou ADMIN.
-  - Body (JSON) :
-    {
-      "prenom": "Jean",
-      "nom": "Dupont",
-      "dateNaissance": "2010-05-20",
-      "email": "jean.dupont@example.com",
-      "sexe": "M",
-      "telephone": "+33123456789",
-      "sectionId": 1,
-      "legalGuardianId": "<uuid>" ,
-      "createStudentAccount": false
-    }
-  - Réponse : ParticipantProfileResponse (201/200 selon implémentation).
-  - Exemple curl :
-    curl -X POST http://localhost:8080/api/participants \
-      -H "Authorization: Bearer $TOKEN" \
-      -H "Content-Type: application/json" \
-      -d '{"prenom":"Jean","nom":"Dupont","dateNaissance":"2010-05-20","sectionId":1}'
+Les contrôleurs sont dans `src/main/java/fr/siovision/voyages/web` et les DTO dans
+`src/main/java/fr/siovision/voyages/infrastructure/dto`.
+Voir le [guide d'intégration RGPD](docs/rgpd-frontend-handoff.md).
 
-- GET /api/participants
-  - Description : récupérer une liste paginée de participants.
-  - Paramètres : q (recherche texte), page, size, sort
-  - Autorisation : ADMIN ou PARENT.
-  - Exemple : GET /api/participants?q=dupont&page=0&size=20
+## Déploiement
 
-- GET /api/participants/{id}
-  - Description : récupérer le profil d'un participant par UUID.
-  - Autorisation : ADMIN ou parent légal.
+Une fusion dans `master` déclenche la publication GHCR puis le déploiement de l'API.
+Sur le serveur, la CI exécute :
 
-- GET /api/participants?email={email}
-  - Description : récupérer un participant par email (si exposé par le controller).
-  - Autorisation : ADMIN ou PARENT.
+```bash
+docker compose pull api
+docker compose up -d --no-deps --wait --wait-timeout 120 api
+```
 
-- PUT /api/participants/{id}
-  - Description : mettre à jour un participant.
-  - Autorisation : ADMIN (ou PARENT selon règles métier).
+PostgreSQL et MinIO doivent déjà fonctionner. Cette procédure met à jour l'API
+sans télécharger à nouveau les images des dépendances ni les redémarrer.
 
-- DELETE /api/participants/{id}
-  - Description : supprimer un participant.
-  - Autorisation : ADMIN.
+## Documentation
 
-Sections
-
-- GET /api/sections
-  - Description : lister / rechercher des sections.
-  - Paramètres : q, page, size, sort
-  - Autorisation : ouverte en lecture selon configuration (souvent publique ou restreinte).
-  - Exemple curl :
-    curl -H "Authorization: Bearer $TOKEN" "http://localhost:8080/api/sections?q=rand&page=0&size=10"
-
-- GET /api/sections/{id}
-  - Description : récupérer une section par son id.
-
-Notes pratiques
-- Validez le schéma JSON des DTOs dans `src/main/java/.../infrastructure/dto` pour connaître les champs exacts et les contraintes.
-- Les codes HTTP usuels : 200 (OK), 201 (Created), 400 (Bad Request), 401 (Unauthorized), 403 (Forbidden), 404 (Not Found), 409 (Conflict).
+- [Références officielles](HELP.md).
+- [Contribution](CONTRIBUTING.md) et [instructions du dépôt](AGENTS.md).
+- [Décisions d'architecture](docs/adr/README.md).
+- [Historique](CHANGELOG.md).

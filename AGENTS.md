@@ -5,7 +5,7 @@ The Spring Boot API lives in `src/main/java/fr/siovision/voyages`, split into `c
 
 ## Build, Test & Development Commands
 - `./gradlew bootRun --args='--spring.profiles.active=dev'` – run the API locally with the dev profile and RequestAuditFilter active.
-- `docker-compose up -d` – start the Postgres + MinIO stack defined in `docker-compose.yml`; drop it with `docker-compose down -v`.
+- `docker compose up -d db minio minio-init` – start the Postgres + MinIO stack defined in `docker-compose.yml`; drop it with `docker-compose down -v`.
 - `./gradlew test` – execute the full JUnit 5 suite; review reports in `build/reports/tests`.
 - `./gradlew bootJar` – create an executable jar for packaging or deployment.
 - `./gradlew clean build` – CI-equivalent compile, test, and verification (fails if lint/tests break).
@@ -17,7 +17,7 @@ Target Java 21 (toolchain configured in `build.gradle`) and Spring Boot 4.1. Use
 Write slice or integration tests with Spring Boot Test + AssertJ, naming files `*Test` (unit/slice) or `*IT` (integration) so Gradle picks them up. Use `MockMvc` for controller tests, `@DataJpaTest` for repository coverage, and seed deterministic data from `src/test/resources` via `@Sql` or builders. Every change touching business rules, security, or migrations should raise coverage and leave `./gradlew test` clean.
 
 ## Commit & Pull Request Guidelines
-Branches follow `feat/<issue-id>-topic` or `fix/...`. Commits adhere to Conventional Commits (`feat(auth): enforce MFA (#52)`) to keep changelogs readable. Pull requests must describe intent, link the tracked issue (`Closes #52`), list manual verification (curl, Swagger, Postman), and attach payload diffs or screenshots when API contracts change. Ensure Gradle tests and Qodana linting pass before requesting review; PRs are merged via squash into `main`.
+Branches follow `feat/<issue-id>-topic` or `fix/...`. Commits adhere to Conventional Commits (`feat(auth): enforce MFA (#52)`) to keep changelogs readable. Pull requests must describe intent, link the tracked issue (`Closes #52`), list manual verification (curl, Swagger, Postman), and attach payload diffs or screenshots when API contracts change. Ensure Gradle tests and Qodana linting pass before requesting review; PRs are merged via squash into `master`.
 
 ## Security & Configuration Tips
-Load credentials through `.env` or your IDE EnvFile, setting `SPRING_DATASOURCE_*`, `S3_*`, `WEBAUTHN_*`, `JWT_*`, and `SPRING_PROFILES_ACTIVE`. Keep secrets out of Git, prefer Docker secrets or CI vaults, and recycle `docker-compose up -d` only when rotating dependencies (Postgres, MinIO) or refreshing challenge secrets.
+Load credentials through `.env` or your IDE EnvFile, setting `SPRING_DATASOURCE_*`, `S3_*`, `WEBAUTHN_*`, `JWT_*`, and `SPRING_PROFILES_ACTIVE`. Keep secrets out of Git, prefer Docker secrets or CI vaults, and recycle `docker compose up -d db minio minio-init` only when rotating dependencies (Postgres, MinIO) or refreshing challenge secrets.
