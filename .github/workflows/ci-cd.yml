@@ -15,7 +15,7 @@ jobs:
       packages: write        # push vers GHCR
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       # Le Dockerfile build avec -x test : les tests tournent ici
       - name: Set up JDK 21
