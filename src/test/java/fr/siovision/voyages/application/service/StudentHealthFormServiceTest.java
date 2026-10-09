@@ -1,6 +1,6 @@
 package fr.siovision.voyages.application.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import fr.siovision.voyages.domain.model.StudentHealthForm;
 import fr.siovision.voyages.domain.model.User;
 import fr.siovision.voyages.infrastructure.repository.StudentHealthFormRepository;
@@ -34,7 +34,7 @@ class StudentHealthFormServiceTest {
 
     @BeforeEach
     void setUp() {
-        objectMapper = new ObjectMapper();
+        objectMapper = tools.jackson.databind.json.JsonMapper.builder().build();
         HealthFormPayloadRenderer healthFormPayloadRenderer = new HealthFormPayloadRenderer(objectMapper);
         service = new StudentHealthFormService(
                 studentHealthFormRepository,

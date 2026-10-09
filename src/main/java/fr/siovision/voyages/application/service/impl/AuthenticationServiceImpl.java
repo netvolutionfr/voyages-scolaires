@@ -1,7 +1,7 @@
 package fr.siovision.voyages.application.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.webauthn4j.WebAuthnAuthenticationManager;
 import com.webauthn4j.converter.util.ObjectConverter;
 import com.webauthn4j.credential.CredentialRecord;
@@ -43,7 +43,7 @@ public class AuthenticationServiceImpl  implements AuthenticationService {
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
     private final WebAuthnAuthenticationManager webAuthnManager = new WebAuthnAuthenticationManager();
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = tools.jackson.databind.json.JsonMapper.builder().build();
 
     @Value("${webauthn.allowed-origins}")          // ex: https://app.campusaway.fr (ou http://localhost:5173 en dev)
     private List<String> allowedOrigins;
@@ -66,7 +66,7 @@ public class AuthenticationServiceImpl  implements AuthenticationService {
         String json;
         try {
             json = objectMapper.writeValueAsString(req);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             throw new RuntimeException(e);
         }
         AuthenticationData authenticationData = webAuthnManager.parse(json);

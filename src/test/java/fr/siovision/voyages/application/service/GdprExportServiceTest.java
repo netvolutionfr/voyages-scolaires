@@ -1,6 +1,6 @@
 package fr.siovision.voyages.application.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import fr.siovision.voyages.domain.model.*;
 import fr.siovision.voyages.infrastructure.dto.gdpr.GdprExportResponse;
 import fr.siovision.voyages.infrastructure.repository.DocumentRepository;
@@ -45,7 +45,7 @@ class GdprExportServiceTest {
 
     @BeforeEach
     void setUp() {
-        objectMapper = new ObjectMapper();
+        objectMapper = tools.jackson.databind.json.JsonMapper.builder().build();
         HealthFormPayloadRenderer renderer = new HealthFormPayloadRenderer(objectMapper);
         service = new GdprExportService(
                 currentUserService,
