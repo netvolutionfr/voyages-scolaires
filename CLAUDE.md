@@ -17,6 +17,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Run a single test class
 ./gradlew test --tests "fr.siovision.voyages.SomeTest"
 
+# Generate CycloneDX SBOM (jar dependencies) → build/reports/cyclonedx/bom.json
+./gradlew cyclonedxBom
+
 # Start dependencies (PostgreSQL + MinIO)
 docker-compose up -d
 ```

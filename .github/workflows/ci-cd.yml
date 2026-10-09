@@ -26,7 +26,42 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & push image
+      # Build local d'abord : l'image n'est poussée que si le scan Trivy passe
+      - name: Build image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          platforms: linux/amd64
+          tags: voyages:scan
+          build-args: |
+            APP_VERSION=${{ github.sha }}
+          provenance: false
+
+      # trivy-action épinglé par SHA (v0.36.0) : ses tags ont déjà été compromis
+      - name: Scan vulnérabilités (bloque sur CRITICAL corrigeable)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: voyages:scan
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: '1'
+
+      - name: SBOM CycloneDX de l'image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: voyages:scan
+          format: cyclonedx
+          output: sbom-image.cdx.json
+          skip-setup-trivy: true
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v7
+        with:
+          name: sbom-${{ github.sha }}
+          path: sbom-image.cdx.json
+
+      - name: Push image
         uses: docker/build-push-action@v7
         with:
           context: .
