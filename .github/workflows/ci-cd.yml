@@ -17,6 +17,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      # Le Dockerfile build avec -x test : les tests tournent ici
+      - name: Set up JDK 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Tests
+        run: ./gradlew test --no-daemon
+
       # Multi-arch optionnel : commente si inutile
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
