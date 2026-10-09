@@ -1,0 +1,5 @@
+# Spring Framework 6.2 : CVE corrigées uniquement en 7.0.9 (Spring Boot 4).
+# Non exploitables ici : l'API REST n'utilise aucune vue serveur (XsltView)
+# ni de SSE (SseEmitter). À retirer lors de la migration vers Spring Boot 4.
+CVE-2026-47884 exp:2027-01-31
+CVE-2026-47890 exp:2027-01-31
