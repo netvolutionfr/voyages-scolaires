@@ -10,7 +10,7 @@
 
 - **Workflow** : toute évolution passe par une Issue → branche → Pull Request.
 - **Revue obligatoire** : au moins 1 mainteneur doit approuver une PR avant merge.
-- **Protection de la branche `main`** :
+- **Protection de la branche `master`** :
     - Aucun push direct n’est autorisé.
     - Les merges doivent se faire via Pull Request.
     - Les tests automatiques (CI) doivent réussir avant merge.

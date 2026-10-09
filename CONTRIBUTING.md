@@ -11,7 +11,7 @@ Merci de votre intérêt pour contribuer à ce projet éducatif !
     - `fix/<id-issue>-courte-description`
 4. **Commitez avec des messages clairs**, en respectant les [Conventional Commits](https://www.conventionalcommits.org/).
     - Exemple : `feat(auth): ajout de l’authentification par token (#12)`
-5. **Ouvrez une Pull Request** vers la branche `main` :
+5. **Ouvrez une Pull Request** vers la branche `master` :
     - Utilisez le template PR fourni.
     - Liez l’issue correspondante dans la description : `Closes #<id-issue>`.
 6. **Attendez une revue** : au moins un reviewer doit valider avant merge.
