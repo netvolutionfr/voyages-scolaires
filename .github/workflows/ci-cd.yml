@@ -111,6 +111,6 @@ jobs:
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "\
             docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} && \
             cd ${DEPLOY_DIR} && \
-            docker compose pull && \
-            docker compose up -d && \
+            docker compose pull api && \
+            docker compose up -d --no-deps --wait --wait-timeout 120 api && \
             docker image prune -f"
