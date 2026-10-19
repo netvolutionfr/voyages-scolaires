@@ -46,6 +46,9 @@ public class CountryFormalityTemplate {
     @Column(nullable = false)
     private boolean required = true;
 
+    @Column(name = "applies_in_transit", nullable = false)
+    private boolean appliesInTransit = false; // exigée aussi si le pays n'est qu'une escale (ex. ESTA)
+
 
     @Column(name = "days_before_trip")
     private Integer daysBeforeTrip; // ex. 30

@@ -16,7 +16,8 @@ public class TripDetailDTO {
     private String destination;
     private Integer familyContribution; // en centimes d'euros
     private String coverPhotoUrl;
-    private CountryDTO country; // Détails du pays
+    private CountryDTO country; // Détails du pays de destination
+    private List<CountryDTO> transitCountries; // Pays d'escale
     private DateRangeDTO tripDates;
     private Integer minParticipants;
     private Integer maxParticipants;

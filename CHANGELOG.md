@@ -7,6 +7,20 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 
 ---
 
+## [Unreleased] — Pays de transit
+
+### Added
+
+- Pays d'escale sur un voyage : `transitCountryIds` dans `TripUpsertRequest`,
+  `transitCountries` dans `TripDetailDTO` (`country` reste la destination).
+- `country_formality_templates.applies_in_transit` : formalités exigées même en
+  simple escale (passeport + ESTA pour les États-Unis, passeport + eTA pour le Canada).
+
+### Fixed
+
+- Modifier le pays d'un voyage met désormais à jour ses formalités ; les
+  formalités ajoutées manuellement sont conservées.
+
 ## [Unreleased] — 2026-07-02 — RGPD : droit à l'effacement (Phase 3)
 
 Troisième et dernière étape de la mise en conformité RGPD (Art. 17). Voir

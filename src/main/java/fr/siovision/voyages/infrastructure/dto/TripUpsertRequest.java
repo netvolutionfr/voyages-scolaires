@@ -32,6 +32,9 @@ public class TripUpsertRequest {
     @NotNull
     private Long countryId;
 
+    /** Pays d'escale (peut être vide) */
+    private List<Long> transitCountryIds = new ArrayList<>();
+
     /** Dates du voyage */
     @NotNull
     private DateRangeDTO tripDates;
