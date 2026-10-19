@@ -36,7 +36,14 @@ public class Trip {
 
     private Integer familyContribution; // en centimes d'euros
     @ManyToOne(fetch = FetchType.LAZY)
-    private Country country;
+    private Country country; // pays de destination
+
+    /** Pays traversés en escale (hors destination) */
+    @ManyToMany
+    @JoinTable(name = "trip_transit_countries",
+            joinColumns = @JoinColumn(name = "trip_id"),
+            inverseJoinColumns = @JoinColumn(name = "country_id"))
+    private List<Country> transitCountries = new ArrayList<>();
 
     private LocalDate departureDate;
     private LocalDate returnDate;

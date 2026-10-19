@@ -59,6 +59,7 @@ public class TripService {
         Country country = countryRepository.findById(tripUpsertRequest.getCountryId())
                 .orElseThrow(() -> new EntityNotFoundException("Country not found id=" + tripUpsertRequest.getCountryId()));
         trip.setCountry(country);
+        trip.setTransitCountries(resolveTransitCountries(tripUpsertRequest.getTransitCountryIds(), country));
 
         // Récupérer les organisateurs
         List<UUID> chaperoneIds = tripUpsertRequest.getChaperoneIds();
@@ -84,7 +85,7 @@ public class TripService {
         trip.setCoverPhotoUrl(tripUpsertRequest.getCoverPhotoUrl());
 
         // Clonage sécurisé des formalités
-        cloneFormalitesFromTemplate(trip, country.getCountryFormalities());
+        syncFormalitiesFromTemplates(trip);
 
         return tripRepository.save(trip);
     }
@@ -117,6 +118,7 @@ public class TripService {
         Country country = countryRepository.findById(tripUpsertRequest.getCountryId())
                 .orElseThrow(() -> new EntityNotFoundException("Country id=" + tripUpsertRequest.getCountryId()));
         updated.setCountry(country);
+        updated.setTransitCountries(resolveTransitCountries(tripUpsertRequest.getTransitCountryIds(), country));
 
         // Récupérer les organisateurs
         List<UUID> chaperoneIds = tripUpsertRequest.getChaperoneIds();
@@ -141,8 +143,9 @@ public class TripService {
 
         updated.setCoverPhotoUrl(tripUpsertRequest.getCoverPhotoUrl());
 
-        // Note : les formalités existantes ne sont pas modifiées ici. La gestion des formalités
-        // ajoutées manuellement ou via le template doit être faite via des endpoints dédiés.
+        // Destination ou escales modifiées : formalités issues des templates resynchronisées,
+        // formalités ajoutées manuellement conservées.
+        syncFormalitiesFromTemplates(updated);
 
         log.info("Trip updated id={}", updated.getId());
         return tripRepository.save(updated);
@@ -218,6 +221,7 @@ public class TripService {
                 trip.getFamilyContribution(),
                 trip.getCoverPhotoUrl(),
                 new CountryDTO(trip.getCountry().getId(), trip.getCountry().getName()),
+                toCountryDTOs(trip.getTransitCountries()),
                 datesVoyage,
                 trip.getMinParticipants(),
                 trip.getMaxParticipants(),
@@ -245,28 +249,82 @@ public class TripService {
         }
     }
 
-    private void cloneFormalitesFromTemplate(Trip trip, List<CountryFormalityTemplate> templates) {
-        if (templates == null || templates.isEmpty()) {
-            return;
+    private List<Country> resolveTransitCountries(List<Long> ids, Country destination) {
+        List<Country> transits = new ArrayList<>();
+        if (ids == null) {
+            return transits;
         }
+        for (Long countryId : new LinkedHashSet<>(ids)) {
+            if (countryId == null || countryId.equals(destination.getId())) {
+                continue;
+            }
+            transits.add(countryRepository.findById(countryId)
+                    .orElseThrow(() -> new EntityNotFoundException("Country not found id=" + countryId)));
+        }
+        return transits;
+    }
+
+    /**
+     * Templates applicables : tous ceux de la destination, puis ceux des escales marqués appliesInTransit.
+     * Un seul template par type de document (la destination est prioritaire).
+     */
+    static List<CountryFormalityTemplate> applicableTemplates(Country destination, List<Country> transits) {
+        Map<Long, CountryFormalityTemplate> byDocumentType = new LinkedHashMap<>();
+        destination.getCountryFormalities()
+                .forEach(t -> byDocumentType.putIfAbsent(t.getDocumentType().getId(), t));
+        // ponytail: un template par type de document ; deux conditions différentes pour un même type
+        // (ex. RU : CNI si <19 ans) ne garde que la première, à revoir si un cas réel l'exige.
+        for (Country transit : transits) {
+            transit.getCountryFormalities().stream()
+                    .filter(CountryFormalityTemplate::isAppliesInTransit)
+                    .forEach(t -> byDocumentType.putIfAbsent(t.getDocumentType().getId(), t));
+        }
+        return new ArrayList<>(byDocumentType.values());
+    }
+
+    /**
+     * Aligne les formalités du voyage sur ses pays (destination + escales).
+     * Les formalités ajoutées manuellement ne sont jamais touchées. Les documents élèves
+     * sont liés au type de document, pas à la formalité : supprimer une formalité ne perd aucun fichier.
+     */
+    static void syncFormalitiesFromTemplates(Trip trip) {
+        List<CountryFormalityTemplate> templates = applicableTemplates(trip.getCountry(), trip.getTransitCountries());
+        // Comparaison par id : equals() des entités n'inclut aucun champ.
+        Set<Long> templateIds = new HashSet<>();
+        templates.forEach(t -> templateIds.add(t.getId()));
+
+        trip.getFormalities().removeIf(f -> !f.isManuallyAdded()
+                && (f.getSourceTemplate() == null || !templateIds.contains(f.getSourceTemplate().getId())));
+
+        Set<Long> coveredDocumentTypes = new HashSet<>();
+        trip.getFormalities().forEach(f -> coveredDocumentTypes.add(f.getDocumentType().getId()));
         for (CountryFormalityTemplate fpt : templates) {
-            TripFormality fv = new TripFormality();
-            fv.setAcceptedMime(new LinkedHashSet<>(fpt.getAcceptedMime() == null ? List.of() : fpt.getAcceptedMime()));
-            fv.setDaysRetentionAfterTrip(fpt.getDaysRetentionAfterTrip());
-            fv.setDaysBeforeTrip(fpt.getDaysBeforeTrip());
-            fv.setMaxSizeMb(fpt.getMaxSizeMb());
-            fv.setNotes(fpt.getNotes());
-            fv.setRequired(fpt.isRequired());
-            fv.setStoreScan(fpt.getStoreScan());
-            Map<String, Object> src = fpt.getTripCondition();
-            fv.setTripCondition(src == null ? new LinkedHashMap<>() : new LinkedHashMap<>(src));
-            fv.setFormalityType(fpt.getType());
-            fv.setDocumentType(fpt.getDocumentType());
-            fv.setTrip(trip);
-            fv.setManuallyAdded(false);
-            fv.setSourceTemplate(fpt);
-            trip.addFormality(fv);
+            if (coveredDocumentTypes.add(fpt.getDocumentType().getId())) {
+                trip.addFormality(cloneFormality(fpt));
+            }
         }
+    }
+
+    private static TripFormality cloneFormality(CountryFormalityTemplate fpt) {
+        TripFormality fv = new TripFormality();
+        fv.setAcceptedMime(new LinkedHashSet<>(fpt.getAcceptedMime() == null ? List.of() : fpt.getAcceptedMime()));
+        fv.setDaysRetentionAfterTrip(fpt.getDaysRetentionAfterTrip());
+        fv.setDaysBeforeTrip(fpt.getDaysBeforeTrip());
+        fv.setMaxSizeMb(fpt.getMaxSizeMb());
+        fv.setNotes(fpt.getNotes());
+        fv.setRequired(fpt.isRequired());
+        fv.setStoreScan(fpt.getStoreScan());
+        Map<String, Object> src = fpt.getTripCondition();
+        fv.setTripCondition(src == null ? new LinkedHashMap<>() : new LinkedHashMap<>(src));
+        fv.setFormalityType(fpt.getType());
+        fv.setDocumentType(fpt.getDocumentType());
+        fv.setManuallyAdded(false);
+        fv.setSourceTemplate(fpt);
+        return fv;
+    }
+
+    private static List<CountryDTO> toCountryDTOs(List<Country> countries) {
+        return countries.stream().map(c -> new CountryDTO(c.getId(), c.getName())).toList();
     }
 
     private TripFormalityDTO mapFormalityToDTO(TripFormality fv) {
@@ -330,6 +388,7 @@ public class TripService {
                 trip.getFamilyContribution(),
                 trip.getCoverPhotoUrl(),
                 paysDTO,
+                toCountryDTOs(trip.getTransitCountries()),
                 tripDates,
                 trip.getMinParticipants(),
                 trip.getMaxParticipants(),
