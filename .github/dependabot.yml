@@ -12,6 +12,10 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # Rester sur la LTS Java 21 : les changements de version Java se font à la main
+      - dependency-name: eclipse-temurin
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: github-actions
     directory: /
