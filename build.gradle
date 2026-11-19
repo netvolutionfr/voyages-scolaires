@@ -22,6 +22,9 @@ configurations {
 
 // Security fixes released after the Spring Boot 4.1.1 dependency baseline.
 ext["tomcat.version"] = "11.0.26"
+// Jackson DoS / path traversal (CVE-2026-89407, -89425, -68497, -91776, -91777, -19032, -83557)
+ext["jackson-bom.version"] = "3.1.8"
+ext["jackson-2-bom.version"] = "2.21.8"
 
 repositories {
     mavenCentral()

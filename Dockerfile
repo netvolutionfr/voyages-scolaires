@@ -30,6 +30,10 @@ USER appuser
 
 COPY --from=build /workspace/app.jar /app/app.jar
 
+# Java4Shell (CVE-2026-114938) : désactive le décodeur Base64 AVX-512 vulnérable.
+# Aucun build Temurin corrigé au 2026-11-19 ; à retirer quand eclipse-temurin:21-jre >= 21.0.13.1.
+# JAVA_TOOL_OPTIONS plutôt que JAVA_OPTS, que docker-compose écrase.
+ENV JAVA_TOOL_OPTIONS="-XX:-UseBASE64Intrinsics"
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -Dserver.shutdown=graceful -Dspring.profiles.active=prod"
 EXPOSE 8080
 
