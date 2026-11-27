@@ -22,7 +22,7 @@ RUN JAR="$(ls build/libs/*.jar | grep -v 'plain' | head -n1)" \
 
 # ---- Runtime stage ----
 # Épinglé par digest : builds reproductibles + PR Dependabot à chaque nouveau build Temurin 21
-FROM eclipse-temurin:21-jre@sha256:ca73b4d3961703d6d7830a4361f49ef0478f8f28b39defc07bb72f4cc7f834f6
+FROM eclipse-temurin:21-jre@sha256:d77e090ae1f6970c047b443c6f0a6c1358b0426d44432bb5a7753408cd43de0d
 WORKDIR /app
 
 # Basic hardening: run as non-root
